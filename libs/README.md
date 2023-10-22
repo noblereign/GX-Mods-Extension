@@ -1,0 +1,1 @@
+[localforage](https://github.com/localForage/localForage) is an open source library for using IndexedDB with a localStorage-like API. It's licensed under Apache 2.0. You can find the website for it [here](https://localforage.github.io/localForage/).

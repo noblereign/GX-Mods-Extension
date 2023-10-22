@@ -1,0 +1,254 @@
+/* chakra-petch-regular - latin */
+@font-face {
+  font-display: swap; /* Check https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display for other options. */
+  font-family: 'Chakra Petch';
+  font-style: normal;
+  font-weight: 400;
+  src: url('../fonts/chakra-petch-v11-latin-regular.woff2') format('woff2'); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
+}
+
+/* chakra-petch-500 - latin */
+@font-face {
+  font-display: swap; /* Check https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display for other options. */
+  font-family: 'Chakra Petch';
+  font-style: normal;
+  font-weight: 500;
+  src: url('../fonts/chakra-petch-v11-latin-500.woff2') format('woff2'); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
+}
+
+/* chakra-petch-600 - latin */
+@font-face {
+  font-display: swap; /* Check https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display for other options. */
+  font-family: 'Chakra Petch';
+  font-style: normal;
+  font-weight: 600;
+  src: url('../fonts/chakra-petch-v11-latin-600.woff2') format('woff2'); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
+}
+
+/* chakra-petch-700 - latin */
+@font-face {
+  font-display: swap; /* Check https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display for other options. */
+  font-family: 'Chakra Petch';
+  font-style: normal;
+  font-weight: 700;
+  src: url('../fonts/chakra-petch-v11-latin-700.woff2') format('woff2'); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
+}
+
+html, body {
+  font-family: Chakra Petch,sans-serif;
+  background: #0a0005;
+  color: hsla(0,0%,100%,.6);
+  font-weight: 400;
+  margin: 0px;
+
+  scrollbar-color: #fa1e4e rgba(0,0,0,0);
+  scrollbar-width: .6rem;
+
+  background-attachment: fixed;
+  background-image: url('bg.png');
+  background-position-x: 50%;
+  background-position-y: 0px;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.page-content {
+	display: flex;
+	box-sizing: border-box;
+	line-height: 1.5;
+	min-height: 100%;
+	overflow: hidden;
+	padding: 0;
+	position: relative;
+	width: 100%;
+	z-index: 1;
+	flex-direction: column;
+	align-items: center;
+}
+
+h1 ~ p {
+	color: #fff;
+	font-size: 1.4rem;
+	font-weight: 300;
+	letter-spacing: .05rem;
+	margin: 0 0 1.2rem;
+	opacity: .8;
+	text-align: center;
+}
+
+h1 {
+  display: block;
+  color: #fff;
+  font-weight: 700;
+  margin: .7rem 0 .4rem;
+  margin-block-start: 0.67em;
+  margin-block-end: 0.67em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+}
+
+p {
+  line-height: 1.5;
+}
+
+.tileGrid {
+	display: flex;
+	flex-direction: row;
+  flex-wrap: wrap;
+	width: 75%;
+	justify-content: space-around;
+}
+
+.tileColumn {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2em;
+	padding-top: 2em;
+}
+
+.tile {
+	box-sizing: border-box;
+	flex-grow: 0;
+	padding-left: 1rem;
+	padding-right: 1rem;
+	border-radius: .5rem;
+	border: 1px solid rgba(255,255,255,.15);
+	height: 475px;
+	overflow: hidden;
+	position: relative;
+	transition: box-shadow .5s ease-in-out;
+	min-width: 380px;
+	max-width: 460px;
+	width: 60%;
+}
+
+.tileparagraph {
+	max-width: 30vw;
+	min-width: 20em;
+}
+
+.image {
+	background-color: rgba(0,0,0,0);
+	background-position: 50%;
+	background-repeat: no-repeat;
+	background-size: cover;
+	background-image: var(--image);
+	-webkit-transition: transform .5s ease-in-out;
+	-moz-transition: transform .5s ease-in-out;
+	-ms-transition: transform .5s ease-in-out;
+	-o-transition: transform .5s ease-in-out;
+	transition: transform .5s ease-in-out;
+  width: 100%;
+  height: 100%;
+}
+
+.image-container {
+	min-height: 60%;
+	margin-left: -1em;
+	margin-right: -1em;
+	display: grid;
+	clip-path: content-box;
+}
+
+.tile:hover .image {
+  -webkit-transform: scale(1.05);
+  -ms-transform: scale(1.05);
+  -moz-transform: scale(1.05);
+  -o-transform: scale(1.05);
+  transform: scale(1.05);
+}
+
+h3.tileheader {
+	color: rgb(255, 255, 255);
+	display: block;
+	font-family: "Chakra Petch", sans-serif;
+	font-size: 28px;
+	font-weight: 700;
+	height: 46.5938px;
+	letter-spacing: 0.208px;
+	line-height: 68.6px;
+	margin-block-end: 10.4px;
+	margin-block-start: 0px;
+	margin-bottom: 2px;
+	margin-inline-end: 0px;
+	margin-inline-start: 0px;
+	margin-left: 0px;
+	margin-right: 0px;
+	margin-top: 0px;
+	text-align: left;
+	width: 100%;
+	-webkit-font-smoothing: antialiased;
+}
+
+.tilebox {
+	width: 100%;
+	height: 100%;
+}
+hr {
+	background: hsla(0,0%,100%,.15);
+	border: 0;
+	height: .1rem;
+	display: block;
+	unicode-bidi: isolate;
+	margin-block-start: 0.5em;
+	margin-block-end: 0.5em;
+	margin-inline-start: auto;
+	margin-inline-end: auto;
+	overflow: hidden;
+	width: 66%;
+	/*background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.15) 10%, rgba(255, 255, 255, 0.15) 90%, rgba(255, 255, 255, 0) 100%);*/
+}
+
+.gxButton {
+	align-items: center;
+	background-color: rgb(47, 42, 60);
+	border: 1px solid rgba(255, 255, 255, 0.15);
+	border-radius: 3.6rem;
+	color: rgb(255, 255, 255);
+	display: inline-flex;
+	font-family: "Chakra Petch", sans-serif;
+	font-size: 12.48px;
+	font-weight: 400;
+	gap: .5em;
+	height: 28px;
+	justify-content: center;
+	outline: none;
+	padding: 8px;
+	cursor: pointer;
+	letter-spacing: .1rem;
+	min-width: 10rem;
+	text-decoration: none;
+	text-transform: uppercase;
+	transition: background-color .25s ease-in-out;
+	white-space: nowrap;
+	float: right;
+}
+
+.hiddenLink {
+	appearance: none;
+	color: rgba(250, 30, 78,.8);
+	text-decoration: none;
+}
+
+.hiddenLink:hover {
+	appearance: none;
+	color: rgba(250, 30, 78,1);
+	text-decoration: none;
+}
+
+.non-affiliation {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+footer {
+	color: rgba(250, 30, 78,.8);
+	font-family: "Chakra Petch", sans-serif;
+	font-size: 16.64px;
+	font-weight: 400;
+	letter-spacing: 0.208px;
+	line-height: 24.96px;
+	text-align: center;
+	margin-top: 81.0px;
+}

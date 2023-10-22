@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Mod Manager</title>
+    <link rel="icon" type="image/x-icon" href="../icons/beasts-32-light.png">
+    <link rel="stylesheet" href="manager.css">
+  </head>
+  <body>
+
+    <template id="modItemTemplate">
+      <li class="modItem">
+        <div class="modInfo">
+          Mod Name
+          <br>
+          <div class="chipBag">
+          </div> 
+          <span class="sourceSubtitle">Source</span>
+        </div>
+        <div class="buttonsContainer">
+          <a class="gxButton goToStoreButton hidden" href="https://store.gx.me/" target="_blank"><svg width="0" height="17" viewBox="0 0 0 17" fill="none" xmlns="http://www.w3.org/2000/svg"></svg>Store</a>
+          <button class="gxButton deleteModButton"><svg width="0" height="17" viewBox="0 0 0 17" fill="none" xmlns="http://www.w3.org/2000/svg"></svg>Delete</button>
+        </div>
+      </li>
+    </template>
+
+    <template id="sfxItemTemplate">
+      <li class="sfxPreviewItem">
+        <span class="sfxName">
+          sound_effect.mp3
+        </span>
+        <div class="rightSideContainer">
+          <select id="category-picker">
+            <option hidden disabled selected value>- select an option -</option>
+            <optgroup label="Browser sounds">
+              <option value="CLICK">Click</option>
+              <option value="FEATURE_SWITCH_OFF">Switch off</option>
+              <option value="FEATURE_SWITCH_ON">Switch on</option>
+              <option value="HOVER">Hover</option>
+              <option value="HOVER_UP" disabled>Hover up</option>
+              <option value="IMPORTANT_CLICK" disabled>Important click</option>
+              <option value="LEVEL_UPGRADE">Browser upgrade</option>
+              <option value="LIMITER_OFF" disabled>Limiter off</option>
+              <option value="LIMITER_ON" disabled>Limiter on</option>
+              <option value="SWITCH_TOGGLE">Switch toggle</option>
+              <option value="TAB_CLOSE">Tab close</option>
+              <option value="TAB_INSERT">Tab insert</option>
+              <option value="TAB_SLASH" disabled>Tab slash</option>
+            </optgroup>
+            <optgroup label="Keyboard sounds">
+              <option value="TYPING_BACKSPACE">Backspace</option>
+              <option value="TYPING_ENTER">Enter</option>
+              <option value="TYPING_SPACE">Spacebar</option>
+              <option value="TYPING_LETTER">Keyboard</option>
+            </optgroup>
+          </select>
+        </div>
+      </li>
+    </template>
+
+    <div class="topToolbar">
+      <h2 id="optionsTitle">Manage mods</h2>
+    </div>
+    <div class="modList">
+      <div class="modListTitleContainer">
+        <h1 class="modListTitle">Installed</h1>
+      </div>
+      <div class="card">
+        <div class="listHolder">
+          <ul id="modListList">
+            <li class="emptyState">You have no mods installed.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="optionContainer buttonsContainer">
+      <a class="gxButton" id="goToStore" href="https://store.gx.me/" target="_blank"><svg width="0" height="17" viewBox="0 0 0 17" fill="none" xmlns="http://www.w3.org/2000/svg"></svg>Store</a>
+      <button class="gxButton" id="createModButton"><svg width="18" height="17" viewBox="0 0 18 17" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18 11H17C16.4477 11 16 10.5523 16 10V5.5M18 13H17C16.4477 13 16 13.4477 16 14V15.5C16 16.0523 15.5523 16.5 15 16.5H3C2.44772 16.5 2 16.0523 2 15.5V3.5C2 2.94772 2.44772 2.5 3 2.5H15C15.5523 2.5 16 2.94772 16 3.5V5.5M16 5.5H18" stroke="currentColor"></path><path d="M5 2.5V0.5M9 2.5V0.5M2 14.5H0M2 11.5H0M2 7.5H0M2 4.5H0" stroke="currentColor"></path><rect x="4.5" y="5" width="9" height="9" rx="1.5" stroke="currentColor"></rect><path d="M10 14.5V16.5M7 14.5V16.5M11.5 2.5V4.5" stroke="currentColor"></path><path d="M7 7.5H8.07074L8.97904 9.97656H9.02096L9.92926 7.5H11V11.5H10.1581V9.04297H10.1284L9.269 11.4746H8.731L7.87162 9.0293H7.84192V11.5H7V7.5Z" fill="currentColor"></path></svg>Create</button>
+    </div>
+
+    <div id="createModModal" class="modal hidden">
+      <div class="modalContent">
+        <div class="modalContainer">
+          <h1>Create new mod</h1>
+          <hr>
+          <label for="modname">Mod name<input type="text" id="modname" name="modname"></label>
+          <hr class="spacer">
+          <span class="titleMsg" id="filesTitle">Layers<br><label for="files" id="filesButton">Choose files<input type="file" id="files" name="files" accept=".mp3, .wav" multiple></label></span>
+          <span class="subtitle">Each layer will be played in ascending order. Accepted file types: mp3, wav. Max files: 7.</span>
+          <br>
+          <span class="subtitle">Ensure that all files are the exact same length, or they will desync over time.</span>
+          <hr class="spacer">
+          <hr>
+          <div class="preview">
+            <span class="emptyState">No files currently selected</span>
+          </div>
+          <hr>
+          <span class="subtitle invalidItem hidden" id="lengthDifference">Some layers have different lengths! This will cause desyncs sooner or later!<br><br></span>
+
+          <span class="titleMsg" id="sfxTitle">Sound effects<br><label for="sfx" id="sfxFilesButton">Choose files<input type="file" id="sfx" name="sfx" accept=".mp3, .wav" multiple></label></span>
+          <span class="subtitle">Accepted file types: mp3, wav.</span>
+          <br>
+          <span class="subtitle">No limit on max files, but every file must have a category set.</span>
+          <hr class="spacer">
+          <hr class="sfxHr">
+          <div class="sfxPreview">
+            <span class="emptyState">No files currently selected</span>
+          </div>
+          <hr>
+          <span class="subtitle hidden" id="longSfx">Long sound effects might eat up RAM quickly. Consider cutting them down to 10 seconds or less.<br><br></span>
+
+          <div class="buttonsContainer">
+            <span class="subtitle invalidItem hidden" id="errorMessage">Something went wrong, please try again.</span>
+            <button class="gxButton" id="cancel" draggable="false"><svg width="0" height="17" viewBox="0 0 0 17" fill="none" xmlns="http://www.w3.org/2000/svg"></svg>Cancel</button>
+            <button class="gxButton" id="finish" disabled><svg width="0" height="17" viewBox="0 0 0 17" fill="none" xmlns="http://www.w3.org/2000/svg"></svg>Create</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="../libs/localforage.min.js"></script>
+    <script src="manager.js"></script>
+  </body>
+</html>

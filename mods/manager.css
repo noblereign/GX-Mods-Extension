@@ -1,0 +1,754 @@
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  background-color: rgb(18, 16, 25);
+  color: #ffffff;
+  font-weight: 400;
+  margin: 0px;
+}
+
+.topToolbar {
+  height: 64px;
+  width: 100%;
+  margin-bottom: 10vh;
+  background-color: rgb(27, 24, 37);
+  border-bottom: 1px solid rgb(72, 64, 99);
+  display: flex;
+}
+
+.chip {
+  font-weight: 600;
+  letter-spacing: .25px;
+  line-height: 16px;
+  margin-right: .25em;
+  transition-property: opacity;
+  transition-timing-function: cubic-bezier(.4,0,.2,1);
+  transition-duration: .15s;
+  opacity: .5;
+  padding: .125rem .5rem;
+  background-color: hsl(28deg 19% 100%/15%);
+  border-color: #fff;
+  border-width: 1px;
+  border-radius: .25rem;
+  height: 1.25rem;
+  display: inline-flex;
+  text-decoration: none;
+  box-sizing: border-box;
+  align-items: center;
+  border-style: solid;
+  text-transform: uppercase;
+  font-size: 11px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+  color: #fff;
+  font-family: Averta,-apple-system,"Segoe UI",system-ui,sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent
+}
+
+h1.modListTitle {
+  font-size: 18px;
+}
+
+h1 {
+  display: block;
+  font-size: 2em;
+  margin-block-start: 0.67em;
+  margin-block-end: 0.67em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+  font-weight: bold;
+}
+
+#optionsTitle {
+  display: flex;
+  align-items: center;
+  margin-left: 44px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  font-size: 17px;
+  font-weight: 450;
+}
+
+hr {
+  margin: 8px -8px 4px;
+  border-top: 1px solid;
+  border-bottom: none;
+  color: rgb(68, 68, 95);
+}
+
+hr.spacer {
+  margin: 4px 0px 2px;
+  border-top: none;
+  border-bottom: none;
+  color: rgb(68, 68, 95);
+}
+
+.modListTitleContainer {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.modList {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  /*min-height: 50vh;*/
+  padding: 0 30px;
+}
+.modList > * {
+  max-width: 824px;
+  width: 100%;
+}
+
+.card {
+  background-color: rgb(27, 24, 37);
+  border-radius: 5px;
+  box-shadow: rgba(0, 0, 0, 0.25) 0px 10px 20px -8px;
+  flex: 1;
+  overflow: hidden;
+  border: solid 1px rgb(72, 64, 99);
+  display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+
+ul {
+  padding-left: 24px;
+  padding-right: 24px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.emptyState {
+  display: block;
+  color: rgb(154, 160, 166);
+  text-align: center;
+  margin:auto;
+}
+
+li:not(:last-child) {
+  margin-bottom: 12px;
+}
+
+.modItem {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.sourceSubtitle {
+  color: rgb(154, 160, 166);
+  /*margin-left: 1ch;*/
+  font-size: 12px;
+}
+
+
+
+
+
+
+
+
+
+
+.hidden {
+  display: none !important;
+}
+
+.button {
+  margin: 3% auto;
+  padding: 4px;
+  text-align: center;
+  font-size: 1.5em;
+  cursor: pointer;
+}
+
+.optionContainer, select {
+  width: 100%; /* Width of the outside container */
+}
+
+select {
+  margin-top: 4px;
+  background-color: rgb(36, 32, 49);
+  color: rgb(255, 255, 255);
+  /*background-image: url(arrow_down.svg);
+  background-origin: padding-box;
+  background-position-x: calc(100% - 10px);
+  background-position-y: calc(50% + 1px);
+  background-repeat-x: no-repeat;
+  background-repeat-y: no-repeat;*/
+
+  -moz-appearance: none;
+	-webkit-appearance: none;
+	appearance: none;
+
+	background-image: url(arrow_down.svg);
+	background-repeat: no-repeat, repeat;
+	background-position: right .7em top 50%, 0 0;
+	background-size: .65em auto, 100%;
+
+  padding-left: 8px;
+
+  background-size: 7px;
+  border-radius: 4px;
+  border: none;
+  height: 28px;
+}
+
+select:focus {
+  box-shadow: 0 0 0 2px #51668E;
+}
+
+/* The slider itself */
+.slider {
+  -webkit-appearance: none;  /* Override default CSS styles */
+  appearance: none;
+  width: 85%; /* Full-width */
+  height: 4px; /* Specified height */
+  background: #121019;
+  outline: none; /* Remove outline */
+  border-radius: 4px;
+}
+
+/* Mouse-over effects */
+.slider:hover {
+  opacity: 1; /* Fully shown on mouse-over */
+  cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+  background: #bfb6d2;
+  height: 8px;
+  width: 8px;
+}
+
+.slider::-moz-range-progress {
+  background-color: #8585a8; 
+  height: 4px;
+  border-radius: 4px;
+  -webkit-transition: .2s; /* 0.2 seconds transition on hover */
+  transition: background-color .2s;
+}
+
+.slider:hover::-moz-range-progress {
+  background-color: #fa1e4e; 
+}
+
+.volumeIcon {
+    height: 18px;
+    width: 18px;
+    mask-image: url(volume.svg);
+    mask-repeat: no-repeat;
+    mask-position: center;
+    background-color: rgb(189, 184, 209);
+    margin-right: 4px;
+}
+
+#volumeContainer {
+  margin-top: 4px;
+  background-color: rgb(34, 34, 48);
+  padding: 4px 8px 4px 4px;
+  border: 1px solid rgb(68, 68, 95);
+  border-radius: 2px;
+
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#volumePercentage {
+  font-size: 12px;
+  text-align: center;
+  width: 18px;
+  margin-left: 4px;
+}
+
+
+
+ /* The switch - the box around the slider */
+.switch {
+  position: relative;
+  display: inline-block;
+  height: 20px;
+  width: 40px;
+  right:5px;
+}
+
+/* Hide default HTML checkbox */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* The slider */
+.toggleSwitch {
+  position: absolute;
+  cursor: pointer;
+  background-color: rgb(25, 25, 36);
+  border-radius: 10px;
+  box-shadow: 0 0 0 1px rgb(68, 68, 95);
+  height: 20px;
+  width: 40px;
+  left: 3px;
+  top: 2px;
+  margin-top: 1px;
+  margin-left: 1px;
+  transition: .25s ease-in-out;
+  z-index: 0;
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, .7));
+}
+
+.toggleSwitch:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  top: 2px;
+  background-color: rgb(186, 186, 206);
+  transition: transform .2s cubic-bezier(.25,.15,.29,1.51);
+}
+
+input:checked + .toggleSwitch {
+  background-color: rgb(80, 23, 43);
+  box-shadow: 0 0 0 2px #fa1e4e;
+}
+
+/*input:focus + .toggleSwitch {
+  box-shadow: 0 0 1px #2196F3;
+}*/
+
+input:checked + .toggleSwitch:before {
+  transform: translateX(20px);
+}
+
+/* Rounded sliders */
+.toggleSwitch.round {
+  border-radius: 34px;
+}
+
+.toggleSwitch.round:before {
+  border-radius: 50%;
+} 
+
+.switchContainer {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
+  height:40px;
+  width:100%
+}
+
+.buttonsContainer {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: center;
+  gap: 3em;
+  align-items: center;
+  height:32px;
+  width:100%
+}
+
+body > .buttonsContainer {
+  margin-top: 16px;
+  margin-bottom: 240px;
+}
+
+.gxButton {
+  align-items: center;
+  background-color: rgb(36, 32, 49);
+  border: 1px solid rgb(72, 64, 99);
+  border-radius: 3px;
+  color: rgb(255, 255, 255);
+  display: inline-flex;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  gap: .5em;/*0.33em;*/
+  height: 32px;
+  justify-content: center;
+  outline: none;
+  padding: 8px 16px;
+  text-transform: none;
+  transition: none;
+  cursor: pointer;
+}
+
+.gxButton:disabled {
+  cursor: not-allowed;
+  opacity: .4;
+}
+
+.gxButton:not(:disabled):hover {
+  background-color: rgb(45, 40, 62);
+}
+
+.gxButton:not(:disabled):active {
+  background-image: linear-gradient(rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.06));
+}
+
+.gxButton:disabled {
+  cursor: not-allowed;
+}
+
+/*.gxButton:focus{
+  box-shadow: 0 0 0 3px rgb(150, 18, 47);
+  transition: box-shadow .3s;
+}*/
+
+.deleteModButton, #cancel {
+  gap: 0px;
+  width: 78px;
+}
+
+#goToStore {
+  text-decoration: none;
+  width: 56.5px;
+  height: 14px;
+  margin: 0px;
+  text-align: center;
+  font-size: 11px;
+  cursor: pointer;
+  gap: 0px;
+  background-color: rgb(250, 30, 78);
+  border-color: rgb(250, 30, 78);
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none; /* Safari */
+  -khtml-user-select: none; /* Konqueror HTML */
+  -moz-user-select: none; /* Old versions of Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none; /* Non-prefixed version, currently
+                        supported by Chrome, Edge, Opera and Firefox */
+}
+
+.goToStoreButton {
+  text-decoration: none;
+  width: 44px;
+  height: 14px;
+  margin: 0px;
+  text-align: center;
+  font-size: 11px;
+  cursor: pointer;
+  gap: 0px;
+  align-items: center;
+  background-color: rgb(36, 32, 49);
+  border: 1px solid rgb(72, 64, 99);
+  border-radius: 3px;
+  color: rgb(255, 255, 255);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  justify-content: center;
+  outline: none;
+  text-transform: none;
+  transition: none;
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none; /* Safari */
+  -khtml-user-select: none; /* Konqueror HTML */
+  -moz-user-select: none; /* Old versions of Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none; /* Non-prefixed version, currently
+                        supported by Chrome, Edge, Opera and Firefox */
+}
+
+#finish {
+  gap: 0px;
+  width: 78px;
+  background-color: rgb(250, 30, 78);
+  border-color: rgb(150, 18, 47)
+}
+
+
+/* The Modal (background) */
+.modal {
+  /*display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgb(0,0,0); /* Fallback color */
+  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+/* Modal Content/Box */
+.modalContent {
+  background-color: rgb(41, 42, 45);
+  margin: 15% auto; /* 15% from the top and centered */
+  padding: 20px;
+  border: none;
+  width: 25%; /* Could be more or less, depending on screen size */
+  border-radius: 8px;
+  min-width: 300px;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.modalContainer > h1 {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 15px;
+  margin-top: -2px;
+  margin-bottom: 16px;
+}
+
+.modalContainer > hr {
+  margin: 0px -20px;
+  margin-bottom: 12px;
+  border-top: 1px solid;
+  border-bottom: none;
+  color: rgb(63, 64, 66);
+}
+
+.modalContainer > hr.spacer {
+  margin: 8px 0px 8px;
+  border-top: none;
+  border-bottom: none;
+  color: rgb(68, 68, 95);
+}
+
+.modItem > .buttonsContainer {
+	margin-top: 8px;
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	justify-content: flex-end;
+	gap: .5em;
+	align-items: center;
+	height: 32px;
+	width: 10em;
+}
+
+.modalContainer > .buttonsContainer{
+  justify-content: right;
+  gap: .5em;
+}
+
+.modalContainer .emptyState {
+  margin-bottom: 12px;
+}
+
+.invalidItem {
+  color: #ff7392 !important;
+}
+
+.subtitle {
+  color: rgb(154, 160, 166);
+  font-size: 12px;
+}
+
+#input {
+  appearance: none;
+  outline: none;
+  border: none;
+  background-color: transparent;
+  box-sizing: border-box;
+  caret-color: var(--cr-input-focus-color);
+  color: var(--cr-input-color);
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  min-height: var(--cr-input-min-height,auto);
+  padding-bottom: var(--cr-input-padding-bottom,6px);
+  padding-inline-end: var(--cr-input-padding-end,8px);
+  padding-inline-start: var(--cr-input-padding-start,8px);
+  padding-top: var(--cr-input-padding-top,6px);
+  text-align: inherit;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+#input:focus {
+  appearance: none;
+  outline: none;
+  border: none;
+}
+
+label[for="modname"] {
+  color: rgb(154, 160, 166);
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: .4px;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+label[for="modname"]:focus-within {
+  color: rgb(250, 30, 78);
+  font-weight: 400;
+}
+
+.titleMsg {
+  color: rgb(154, 160, 166);
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: .4px;
+  line-height: 1;
+  min-width: 94px;
+  margin-bottom: 0px;
+  width:20%
+}
+
+input[type="text"] {
+  display: block;
+  width: 95%;
+  background-color: rgb(36, 32, 49);
+  border: 1px solid rgb(72, 64, 99);
+  border-radius: 3px;
+  color: rgb(255, 255, 255);
+  font-size: 13px;
+  height: 18px;
+  padding: 6px 12px;
+  caret-color: rgb(250, 30, 78);
+  outline-color: rgb(255, 255, 255);
+  margin-top: 8px;
+  -moz-appearance: none;
+  appearance: none;
+  outline: none;
+}
+
+input[type="text"]:focus {
+  appearance: none;
+  outline: none;
+}
+
+input[type="text"]::-moz-selection {
+  background: rgb(250, 30, 78); /* Gecko Browsers */
+  color: #FFFFFF;
+}
+
+input[type="file"] {
+  display: none;
+}
+
+.modal li{
+  list-style-type: none
+}
+
+ol {
+	padding-left: 0px;
+}
+
+.preview {
+  margin: 0px -20px;
+}
+
+.preview li:not(:last-child) {
+	margin-bottom: 12px;
+	border-bottom: 1px solid rgb(63, 64, 66);
+}
+
+/*fucked up sfx preview css im so sorry*/
+.sfxPreview li:not(:last-child) {
+	border-bottom: 1px solid rgb(63, 64, 66);
+}
+.sfxPreview li:last-child {
+  margin: 0px -20px -5px -20px;
+}
+.sfxPreview li:first-child {
+	margin: -8px -20px 4px -20px;
+}
+.sfxPreview li {
+  margin: 0px -20px 4px -20px;
+	padding: 0px 20px 7px 20px;
+}
+.sfxPreview ol {
+  margin: 5px 0px 5px;
+}
+
+.sfxName {
+	margin: 3px 0px 0px 0px;
+	text-overflow: ellipsis;
+	overflow: hidden;
+	max-width: 50%;
+}
+
+.rightSideContainer {
+  width: 44%;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.sfxLength {
+  color: rgb(154, 160, 166);
+  text-align: center;
+  width: 32px;
+  padding-right: 8px;
+  min-width: 32px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+}
+
+select#category-picker {
+	width: 80%;
+}
+
+li.fileItem p {
+	padding-left: 24px;
+	padding-right: 24px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+li.sfxPreviewItem {
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	align-items: center;
+}
+/*
+.sfxPreview li {
+  margin-left: -20px;
+	margin-right: -20px;
+	padding: 6px 24px;
+	margin-top: -12px;
+}
+*/
+
+#filesButton, #sfxFilesButton {
+  align-items: center;
+  background-color: rgb(36, 32, 49);
+  border: 1px solid rgb(72, 64, 99);
+  border-radius: 3px;
+  color: rgb(255, 255, 255);
+  display: inline-flex;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  gap: .5em;/*0.33em;*/
+  height: 32px;
+  justify-content: center;
+  outline: none;
+  padding: 0px 12px;
+  text-transform: none;
+  transition: none;
+  cursor: pointer;
+  margin-top: 8px;
+  margin-bottom: 12px;
+}
+
+#filesButton:hover, #sfxFilesButton:hover {
+  background-color: rgb(45, 40, 62);
+}
+
+#filesButton:active, #sfxFilesButton:active {
+  background-image: linear-gradient(rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.06));
+}

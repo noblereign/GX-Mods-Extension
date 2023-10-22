@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="16px" height="16px" viewBox="0 0 16 16" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>volume_on</title>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="volume_on">
+            <polygon id="Path" points="0 0 16 0 16 16 0 16"></polygon>
+            <path d="M1.25,5.75 L1.25,10.25 L4.25,10.25 L8,14 L8,2 L4.25,5.75 L1.25,5.75 Z M11.375,8 C11.375,6.6725 10.61,5.5325 9.5,4.9775 L9.5,11.015 C10.61,10.4675 11.375,9.3275 11.375,8 Z M9.5,1.4225 L9.5,2.9675 C11.6675,3.6125 13.25,5.6225 13.25,8 C13.25,10.3775 11.6675,12.3875 9.5,13.0325 L9.5,14.5775 C12.5075,13.895 14.75,11.21 14.75,8 C14.75,4.79 12.5075,2.105 9.5,1.4225 Z" id="Shape" fill="#000000" fill-rule="nonzero"></path>
+        </g>
+    </g>
+</svg>

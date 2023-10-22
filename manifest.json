@@ -1,0 +1,59 @@
+{
+  "description": "Add ambient music, typing sounds, and more to your browsing experience.",
+  "manifest_version": 2,
+  "name": "GX Mods",
+  "version": "4.0.0",
+  "developer": {
+    "name": "Noble (@frost@wolfdo.gg), Taylor (@tay@tech.lgbt)",
+    "url": "https://wolfdo.gg/@frost"
+  },
+  "homepage_url": "https://github.com/mdn/webextensions-examples/tree/master/beastify",
+  "icons": {
+    "48": "icons/beasts-48.png"
+  },
+  "background": {
+    "page": "background-page.html"
+  },
+  "options_ui": {
+    "page": "mods/manager.html",
+    "open_in_tab": true
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*/*"],
+      "js": ["content_scripts/gx_music.js"]
+    },
+    {
+      "matches": ["https://store.gx.me/*"],
+      "js": ["content_scripts/gx_store_mixin.js"],
+      "css": ["content_scripts/gx_store_mixin.css"]
+    }
+  ],
+
+  "permissions": [
+    "activeTab", "tabs", "<all_urls>", "alarms", "storage", "webNavigation", "downloads", "unlimitedStorage", "notifications"
+  ], 
+
+  "browser_action": {
+    "default_icon": "icons/beasts-32.png",
+    "theme_icons": [{
+        "light": "icons/beasts-32-light.png",
+        "dark": "icons/beasts-32.png",
+        "size": 32
+    }],
+    "default_title": "GX Mods",
+    "default_popup": "popup/settings_menu.html"
+  },
+
+  "web_accessible_resources": [
+    "music/*.mp3"
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "gxmusic@thelmgn.com",
+      "strict_min_version": "57.0"
+    }
+  }
+  
+
+}

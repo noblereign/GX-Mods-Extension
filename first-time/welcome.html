@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>Welcome to GXM!</title>
+  <link rel="icon" type="image/x-icon" href="../icons/beasts-32-light.png">
+  <link rel="stylesheet" href="welcome.css">
+</head>
+
+<body>
+  <div class="page-content">
+    <h1>Hey there!</h1>
+    <p class="header-below">Welcome to GXM! Have a look around.</p>
+
+    <hr>
+
+    <div class="tileGrid">
+      <div class="tileColumn">
+        <div class="tile">
+          <div class="tilebox">
+            <div class="image-container">
+              <div class="image" style="--image: url('gxm_settings.png')"></div>
+            </div>
+            <h3 class="tileheader">
+              GXM Settings
+            </h3>
+            <p class="tileparagraph">
+              Want to get started immediately? Try some of the included example mods!
+            </p>
+            <a class="gxButton" id="openPopup">Show me!</a>
+          </div>
+        </div>
+
+        <div class="tile">
+          <div class="tilebox">
+            <div class="image-container">
+              <div class="image" style="--image: url('mod_manager.png')"></div>
+            </div>
+            <h3 class="tileheader">
+              Mod Manager
+            </h3>
+            <p class="tileparagraph">
+              Make a mod and get your browser sounding exactly as YOU want it to sound!
+            </p>
+            <a class="gxButton" id="openMods">Let's go!</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="tileColumn">
+        <div class="tile">
+          <div class="tilebox">
+            <div class="image-container">
+              <div class="image" style="--image: url('gx_store.png')"></div>
+            </div>
+            <h3 class="tileheader">
+              GX Store
+            </h3>
+            <p class="tileparagraph">
+              It's called GX Mods for a reason. Install actual mods from the GX Store into GXM!
+            </p>
+            <a class="gxButton" id="goToStore" href="https://store.gx.me/" target="_blank">Browse</a>
+          </div>
+        </div>
+
+        <div class="tile">
+          <div class="tilebox">
+            <div class="image-container">
+              <div class="image" style="--image: url('github.png')"></div>
+            </div>
+            <h3 class="tileheader">
+              GitHub
+            </h3>
+            <p class="tileparagraph">
+              Take a peek into the inner workings of GXM. I warn you, it won't be pretty...
+            </p>
+            <a class="gxButton" id="goToGithub" href="https://github.com/noblereign/GX-Mods-Extension" target="_blank">I'm ready.</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p class="credit">Made by <a class="hiddenLink" id="wolf" href="https://glacier.dog/" target="_blank">a wolf</a> and <a class="hiddenLink" id="fox" href="https://robins.one/" target="_blank">a fox</a>!</p>
+    <p class="non-affiliation">We aren't affiliated with Opera Norway, Opera Software, or Otello Corporation in any way, shape, or form.<br>If GXM manages to blow up your PC or something, yell at us, not them.</p>
+  </footer>
+  <script src="welcome.js"></script>
+</body>
+
+</html>

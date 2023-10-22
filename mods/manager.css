@@ -468,7 +468,10 @@ body > .buttonsContainer {
   background-color: rgb(250, 30, 78);
   border-color: rgb(150, 18, 47)
 }
-
+#finish:disabled {
+  cursor: not-allowed;
+  opacity: .4;
+}
 
 /* The Modal (background) */
 .modal {

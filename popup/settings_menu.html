@@ -16,6 +16,16 @@
 <body>
   <div id="popup-content">
     <div class="loadingOverlay"></div>
+    <div class="consentOverlay disabled">
+      <span id="consentTitle">Consent required</span>
+      <br>
+      <span id="consentDesc">Enabling this option will allow GXM to download a list of shopping websites from jsDelivr on browser startup.<br>Do you wish to continue?</span>
+      <br>
+      <div class="buttonsContainer">
+        <button class="gxButton" id="cancel" draggable="false">Cancel</button>
+        <button class="gxButton importantButton" id="consent" draggable="false">Enable</button>
+      </div>
+    </div>
     <span id="optionsTitle">Background music</span>
     <hr>
     <div class="optionContainer switchContainer">

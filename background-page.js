@@ -581,6 +581,9 @@ browser.runtime.onInstalled.addListener((details) => {
 
 function pageLoadEvent(details) {
     //console.log(`[GXM] page loaded: ${details.url}`);
+    if (cachedSettings.muteShopping && (shoppingListCache == "")) {
+        initShoppingMutes()
+    }
     if (cachedSettings.pageLoad) {
         level += 10;
         updateLevels()
@@ -925,6 +928,10 @@ browser.storage.local.get().then(
         
         cachedSettings.sfxLinks = (typeof result.sfxLinks == "undefined") ? false : result.sfxLinks;
         cachedSettings.sfxAltSwitch = (typeof result.sfxAltSwitch == "undefined") ? false : result.sfxAltSwitch;
+
+        if (result.consentedToJSD && result.shoppingMute) {
+            initShoppingMutes()
+        }
         
         loadSounds(result.trackName || 'off')
         loadKeyboardSounds(result.keyboardName || 'off')
@@ -1038,16 +1045,25 @@ async function shouldShoppingMute(info) {
     }
 }
 
-fetchRetryText("https://cdn.jsdelivr.net/gh/corbindavenport/shop-list/list.txt").then(function(value) {
-    shoppingListCache = value
-    console.log("[GXM] shop sites list updated!!")
+function initShoppingMutes() {
+    if (shoppingListCache == "") {
+        shoppingListCache = "currentlyFetchingPleaseWait!"
+        fetchRetryText("https://cdn.jsdelivr.net/gh/corbindavenport/shop-list/list.txt").then(function(value) {
+            shoppingListCache = value
+            console.log("[GXM] shop sites list updated!!")
 
-    browser.tabs.onUpdated.addListener(function(tabId, changeInfo) {
-        if (changeInfo.url) {
-            shouldShoppingMute(tabId)
-        }
-    });
-    browser.tabs.onActivated.addListener(function(tab) {
-        shouldShoppingMute(tab)
-    });
-})
+            browser.tabs.onUpdated.addListener(function(tabId, changeInfo) {
+                if (changeInfo.url) {
+                    shouldShoppingMute(tabId)
+                }
+            });
+            browser.tabs.onActivated.addListener(function(tab) {
+                shouldShoppingMute(tab)
+            });
+        }).catch(function(err) {
+            console.warn("Something went wrong while fetching the shopping list!")
+            console.warn(err)
+            shoppingListCache = ""
+        })
+    }
+}

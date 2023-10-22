@@ -4,6 +4,7 @@ document.documentElement.style.setProperty('--scrollbar-width', (window.innerWid
 const MOD_DATABASE_KEY = "GXMusicMods"
 
 const loadingShimmer = document.querySelector(".loadingOverlay")
+const consentForm = document.querySelector(".consentOverlay")
 
 const enabledBox = document.getElementById('enabled');
 const muteAutoBox = document.getElementById('muteAuto');
@@ -11,6 +12,8 @@ const pageLoadBox = document.getElementById('pageLoad');
 const downloadsBox = document.getElementById('download');
 var volumeSlider = document.getElementById('volume');
 var trackSelector = document.getElementById('track-picker');
+
+let consentedToJSD = false;
 
 
 const SFXkeyboardBox = document.getElementById('typingOn');
@@ -131,12 +134,14 @@ function saveOptions() {
         sfxKeyboard: SFXkeyboardBox.checked,
         keyboardVolume: KeyboardVolumeSlider.value,
 
-        muteShopping: muteShoppingBox.checked
+        muteShopping: muteShoppingBox.checked,
+        consentedToJSD: consentedToJSD
     });
 }
 
 function restoreOptions() {
     function setCurrentChoice(result) {
+        consentedToJSD = (typeof result.consentedToJSD == "undefined") ? false : result.consentedToJSD;
         // MUSIC
         trackSelector.value = result.trackName || "off";
         enabledBox.checked = (typeof result.enabled == "undefined") ? true : result.enabled;
@@ -275,7 +280,17 @@ SFXupdatesBox.addEventListener('change', (event) => {
     saveOptions()
 })
 muteShoppingBox.addEventListener('change', (event) => {
-    saveOptions()
+    if (muteShoppingBox.checked) {
+        if (consentedToJSD) {
+            consentedToJSD = true
+            saveOptions()
+        } else {
+            muteShoppingBox.checked = false
+            consentForm.setAttribute("enabled", "");
+        }
+    } else {
+        saveOptions()
+    }
 })
 SFXlinksBox.addEventListener('change', (event) => {
     saveOptions()
@@ -288,4 +303,17 @@ SFXaltSwitchesBox.addEventListener('change', (event) => {
 var modsButton = document.getElementById('createModButton');
 modsButton.onclick = function() {
     browser.runtime.openOptionsPage()
+}
+
+const iDontConsent = document.querySelector("#cancel")
+const iConsent = document.querySelector("#consent")
+
+iDontConsent.onclick = function() {
+    consentForm.removeAttribute("enabled");
+}
+iConsent.onclick = function() {
+    consentForm.removeAttribute("enabled");
+    muteShoppingBox.checked = true
+    consentedToJSD = true
+    saveOptions()
 }

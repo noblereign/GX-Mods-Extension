@@ -60,6 +60,10 @@
 # Installation
  If you're reading this, you got here REAL early. For now, just download the repo and install the manifest.json as a temporary extension. An AMO link will be here soon! (hopefully)
 
+ *Note: The strict minimum version for this extension is Firefox 57. You will most definitely have a degraded experience on a version this old. Notably, setting changes require a restart, and you can't make mods.*
+
+ *The minimum version for full functionality is Firefox 95, but setting changes will still require a restart.*
+
 # Usage
  By default, the extension comes with some default sound packs for you to play around with. Select one from the dropdown and the sounds will load in a second.
  

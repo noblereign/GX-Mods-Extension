@@ -149,7 +149,7 @@ function restoreOptions() {
         pageLoadBox.checked = (typeof result.pageLoad == "undefined") ? false : result.pageLoad;
         downloadsBox.checked = (typeof result.download == "undefined") ? false : result.download;
         volumeSlider.value = result.volume || 50;
-        volumePercentage.innerHTML = volumeSlider.value;
+        volumePercentage.textContent = volumeSlider.value;
 
         muteShoppingBox.checked = (typeof result.muteShopping == "undefined") ? false : result.muteShopping;
         // SOUND EFFECTS
@@ -158,7 +158,7 @@ function restoreOptions() {
         SFXtabBox.checked = (typeof result.sfxTabs == "undefined") ? false : result.sfxTabs;
         SFXswitchesBox.checked = (typeof result.sfxPage == "undefined") ? false : result.sfxPage;
         SFXvolumeSlider.value = result.sfxVolume || 50;
-        volumeSFXPercentage.innerHTML = SFXvolumeSlider.value;
+        volumeSFXPercentage.textContent = SFXvolumeSlider.value;
 
         SFXhoversBox.checked = (typeof result.sfxHovers == "undefined") ? false : result.sfxHovers;
         SFXbuttonsBox.checked = (typeof result.sfxButtons == "undefined") ? false : result.sfxButtons;
@@ -172,7 +172,7 @@ function restoreOptions() {
         KeyboardVolumeSlider.value = result.keyboardVolume || 50;
 
 
-        volumeKeyboardPercentage.innerHTML = KeyboardVolumeSlider.value;
+        volumeKeyboardPercentage.textContent = KeyboardVolumeSlider.value;
 
         loadingShimmer.setAttribute("disabled", "");
     }
@@ -217,35 +217,35 @@ var volumeKeyboardPercentage = document.getElementById('volumeKeyboardPercentage
 
 
 volumeSlider.addEventListener("input", () => {
-    volumePercentage.innerHTML = volumeSlider.value;
+    volumePercentage.textContent = volumeSlider.value;
     browser.runtime.sendMessage(`volumeChange=${volumeSlider.value}`)
 });
 
 volumeSlider.addEventListener("mouseup", () => {
     console.log("Saving volume");
-    volumePercentage.innerHTML = volumeSlider.value;
+    volumePercentage.textContent = volumeSlider.value;
     saveOptions()
 });
 
 SFXvolumeSlider.addEventListener("input", () => {
-    volumeSFXPercentage.innerHTML = SFXvolumeSlider.value;
+    volumeSFXPercentage.textContent = SFXvolumeSlider.value;
     browser.runtime.sendMessage(`SFXvolumeChange=${SFXvolumeSlider.value}`)
 });
 
 SFXvolumeSlider.addEventListener("mouseup", () => {
     console.log("Saving sfx volume");
-    volumeSFXPercentage.innerHTML = SFXvolumeSlider.value;
+    volumeSFXPercentage.textContent = SFXvolumeSlider.value;
     saveOptions()
 });
 
 KeyboardVolumeSlider.addEventListener("input", () => {
-    volumeKeyboardPercentage.innerHTML = KeyboardVolumeSlider.value;
+    volumeKeyboardPercentage.textContent = KeyboardVolumeSlider.value;
     browser.runtime.sendMessage(`KeyboardvolumeChange=${KeyboardVolumeSlider.value}`)
 });
 
 KeyboardVolumeSlider.addEventListener("mouseup", () => {
     console.log("Saving sfx volume");
-    volumeKeyboardPercentage.innerHTML = KeyboardVolumeSlider.value;
+    volumeKeyboardPercentage.textContent = KeyboardVolumeSlider.value;
     saveOptions()
 });
 //im too lazy to put these in an array or smth lollll

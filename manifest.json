@@ -7,7 +7,7 @@
     "name": "Noble (@frost@wolfdo.gg), Taylor (@tay@tech.lgbt)",
     "url": "https://wolfdo.gg/@frost"
   },
-  "homepage_url": "https://github.com/mdn/webextensions-examples/tree/master/beastify",
+  "homepage_url": "https://github.com/noblereign/GX-Mods-Extension/",
   "icons": {
     "48": "icons/beasts-48.png"
   },
@@ -50,7 +50,7 @@
   ],
   "browser_specific_settings": {
     "gecko": {
-      "id": "gxmusic@thelmgn.com",
+      "id": "gxmods@glacier.dog",
       "strict_min_version": "57.0"
     }
   }

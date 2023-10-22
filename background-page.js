@@ -402,7 +402,7 @@ async function onExtensionMessage(message, sender) {
                             
                             browser.notifications.create({
                                 type: "basic",
-                                iconUrl: browser.extension.getURL("icons/gxm_large_outline.png"),
+                                iconUrl: browser.runtime.getURL("icons/gxm_large_outline.png"),
                                 title: "Mod installed!",
                                 message: `Added content: ${addedContent}`,
                             });

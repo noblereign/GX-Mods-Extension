@@ -58,7 +58,7 @@
  *Without this permission, the extension would stop working after you download too many mods. I mean, it still can, but it's just highly unlikely now.*
 
 # Installation
- If you're reading this, you got here REAL early. For now, just install the manifest.json as a temporary extension. An AMO link will be here soon! (hopefully)
+ If you're reading this, you got here REAL early. For now, just download the repo and install the manifest.json as a temporary extension. An AMO link will be here soon! (hopefully)
 
 # Usage
  By default, the extension comes with some default sound packs for you to play around with. Select one from the dropdown and the sounds will load in a second.

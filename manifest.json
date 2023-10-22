@@ -31,7 +31,7 @@
   ],
 
   "permissions": [
-    "activeTab", "tabs", "<all_urls>", "alarms", "storage", "webNavigation", "downloads", "unlimitedStorage", "notifications"
+    "activeTab", "tabs", "<all_urls>", "storage", "webNavigation", "downloads", "unlimitedStorage", "notifications"
   ], 
 
   "browser_action": {

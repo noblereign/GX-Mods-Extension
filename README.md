@@ -24,7 +24,7 @@
 # Privacy Policy
  **GXM does not collect any data.**
  
- Some things might be read, like the URL or the state of downloads, or browsing activity, but *all of that information is* ***NEVER*** *sent over the Internet*. It's only used so the music can react to events.
+ Some things might be read, like the URL or the state of downloads, or browsing activity, but *all of that information is* ***NEVER*** *sent over the Internet*. It's only used internally, by the extension, so the music can react to events.
  
  **If you enable "Mute while shopping", [a list of shopping websites](https://cdn.jsdelivr.net/gh/corbindavenport/shop-list/list.txt) will be downloaded from jsdelivr.**
  

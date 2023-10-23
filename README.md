@@ -58,7 +58,7 @@
  *Without this permission, the extension would stop working after you download too many mods. I mean, it still can, but it's just highly unlikely now.*
 
 # Installation
- If you're reading this, you got here REAL early. For now, just download the repo and install the manifest.json as a temporary extension. An AMO link will be here soon! (hopefully)
+ Install it from the Firefox Addons Store! https://addons.mozilla.org/en-US/firefox/addon/gx-mods/
 
  *Note: The strict minimum version for this extension is Firefox 57. You will most definitely have a degraded experience on a version this old. Notably, setting changes require a restart, and you can't make mods.*
 

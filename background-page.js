@@ -122,7 +122,54 @@ function lerp(start, end, t){
 }
 const clamp = (val, min, max) => Math.min(Math.max(val, min), max)
 
+
+function createCanvas(width, height){
+    const myOffScreenCanvas = document.createElement("canvas");
+    myOffScreenCanvas.width = width;
+    myOffScreenCanvas.height = height;
+    // attach the context to the canvas for easy access and to reduce complexity.
+    myOffScreenCanvas.ctx = myOffScreenCanvas.getContext("2d"); 
+    return myOffScreenCanvas;
+ }
+
 var last = Date.now()
+let canvasUpdated = true
+
+let CANVAS_SIZE = 16;
+
+let currentAnalyzer = null;
+const ANALYZER_SIZE = CANVAS_SIZE*2
+
+const iconCanvas = document.getElementById("display");
+iconCanvas.width = CANVAS_SIZE;
+iconCanvas.height = CANVAS_SIZE;
+let iconCanvasContext = null
+try {
+    const offscreen = iconCanvas.transferControlToOffscreen();
+    iconCanvasContext = offscreen.getContext("2d");
+} catch {
+    console.log("[GXM] Firefox version may not support Offscreen Canvas, falling back to main thread")
+    iconCanvasContext = iconCanvas.getContext("2d");
+}
+
+const backgroundCanvas = document.getElementById("background");
+backgroundCanvas.width = CANVAS_SIZE;
+backgroundCanvas.height = CANVAS_SIZE;
+let backgroundCanvasContext = null
+try {
+    const offscreen = backgroundCanvas.transferControlToOffscreen();
+    backgroundCanvasContext = offscreen.getContext("2d");
+} catch {
+    console.log("[GXM] Firefox version may not support Offscreen Canvas, falling back to main thread")
+    backgroundCanvasContext = backgroundCanvas.getContext("2d");
+}
+
+let bufferLength = null
+let barWidth = null
+let frequencyData = null
+let currentBarX = 0
+let currentCanvasImage = iconCanvasContext.getImageData(0, 0, CANVAS_SIZE, CANVAS_SIZE)
+
 function updateLevels() {
     var now = Date.now()
     var delta = (now - last) / 1000
@@ -139,10 +186,95 @@ function updateLevels() {
     lerpedLevel = lerp(lerpedLevel,level,clamp(delta*20,0,1))
 }
 
+function easeInOutCubic(x) {
+    return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+}
+
+function easeOutCubic(x) {
+    return 1 - Math.pow(1 - x, 3);
+}
+
+function getStandardDeviation (array) {
+    const n = array.length
+    const mean = array.reduce((a, b) => a + b) / n
+    return Math.sqrt(array.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b) / n)
+}
+
+function ms(array) {
+    var newArr = new Uint8Array(bufferLength);
+    var m = array => array.reduce((a, b) => a + b) / array.length;;
+    var s = getStandardDeviation(array);
+    for (var i in array) {
+        if (array[i] - m > 2 * s) {
+            newArr[i] = array[i];
+        } else {
+            newArr[i] = array[i] / 2;
+        }
+    }
+    return newArr;
+}
+
+
+async function updateCanvas() {
+    if (canvasUpdated && (currentAnalyzer != null)) {
+        canvasUpdated = false
+        if (!bufferLength) {
+            bufferLength = currentAnalyzer.frequencyBinCount;
+            barWidth = CANVAS_SIZE / bufferLength;
+        }
+        if (!frequencyData) {
+            frequencyData = new Uint8Array(bufferLength);
+        }
+
+        currentAnalyzer.getByteFrequencyData(frequencyData);
+        backgroundCanvasContext.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+        iconCanvasContext.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+        backgroundCanvasContext.fillStyle = "#fa1e4e";
+        currentBarX = 0;
+        const emphasis = ms(frequencyData)
+        emphasis.forEach((amount) => {
+            // 0 to 255
+            const percent = amount / 255;
+            const barHeight = clamp(((CANVAS_SIZE * percent)/CANVAS_SIZE)*CANVAS_SIZE,1,CANVAS_SIZE) // clamp(Math.floor(CANVAS_SIZE * percent),1,CANVAS_SIZE);
+
+            backgroundCanvasContext.fillRect(
+                currentBarX,
+                CANVAS_SIZE - barHeight,
+                barWidth,
+                barHeight
+            );
+            currentBarX += barWidth
+        });
+
+        iconCanvasContext.drawImage(backgroundCanvas, 0, 0);
+        currentCanvasImage = iconCanvasContext.getImageData(0, 0, CANVAS_SIZE, CANVAS_SIZE)
+        canvasUpdated = true
+    }
+}
+
+function updateIcon() {
+    browser.browserAction.setIcon({
+        imageData: {
+            16: currentCanvasImage,
+            32: currentCanvasImage,
+            64: currentCanvasImage,
+            128: currentCanvasImage,
+            256: currentCanvasImage,
+            512: currentCanvasImage,
+            1024: currentCanvasImage,
+        },
+    })
+}
+
 setInterval(function() {
     if (level > 0) level -= decay;
     updateLevels()
+    updateCanvas()
 }, 16.6)
+
+setInterval(function() {
+    updateIcon()
+}, 50)
 
 var sounds = [];
 var sourceNodes = [];
@@ -631,18 +763,25 @@ async function loadSounds(track) {
     sourceNodes.forEach(sourceNode => sourceNode.disconnect());
     gainNodes.forEach(gainNode => gainNode.disconnect());
     MasterGainNode.disconnect()
+    if (currentAnalyzer) {
+        currentAnalyzer.disconnect()
+    }
     
     await delay(500);
 
     // audioContext.close()
     // audioContext = null
     MasterGainNode = null
+    currentAnalyzer = null
 
     //audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
+    currentAnalyzer = audioContext.createAnalyser();
+    currentAnalyzer.fftSize = ANALYZER_SIZE
     MasterGainNode = audioContext.createGain();
     MasterGainNode.gain.value = (cachedSettings.volume/100);
     MasterGainNode.connect(audioContext.destination);
+    currentAnalyzer.connect(MasterGainNode);
 
     sounds = null
     sourceNodes = null
@@ -687,7 +826,7 @@ async function loadSounds(track) {
                 gainNode.gain.value = 0.0; // Adjust the volume as needed
                 
                 sourceNode.connect(gainNode);
-                gainNode.connect(MasterGainNode);
+                gainNode.connect(currentAnalyzer);
                 
                 sounds.push(soundBuffer);
                 sourceNodes.push(sourceNode);
@@ -711,7 +850,7 @@ async function loadSounds(track) {
                 gainNode.gain.value = 0.0; // Adjust the volume as needed
                 
                 sourceNode.connect(gainNode);
-                gainNode.connect(MasterGainNode);
+                gainNode.connect(currentAnalyzer);
                 
                 //const sound = new Audio(url);
                 sounds.push(soundBuffer);
@@ -961,6 +1100,10 @@ browser.runtime.onSuspend.addListener(function () {
     gainNodes.forEach(gainNode => gainNode.disconnect());
     MasterGainNode.disconnect()
     MasterGainNode = null
+    if (currentAnalyzer) {
+        currentAnalyzer.disconnect()
+        currentAnalyzer = null
+    }
     KeyboardGainNode.disconnect()
     KeyboardGainNode = null
     SFXGainNode.disconnect()
@@ -978,9 +1121,12 @@ browser.runtime.onSuspendCanceled.addListener(function () {
     
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
+    currentAnalyzer = audioContext.createAnalyser();
+    currentAnalyzer.fftSize = ANALYZER_SIZE
     MasterGainNode = audioContext.createGain();
     MasterGainNode.gain.value = (cachedSettings.volume/100);
     MasterGainNode.connect(audioContext.destination);
+    currentAnalyzer.connect(MasterGainNode)
 
     SFXGainNode = audioContext.createGain();
     SFXGainNode.gain.value = (cachedSettings.sfxVolume/100);

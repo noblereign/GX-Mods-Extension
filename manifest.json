@@ -21,11 +21,11 @@
   "content_scripts": [
     {
       "matches": ["*://*/*"],
-      "js": ["content_scripts/gx_music.js"]
+      "js": ["browser-polyfill.min.js", "content_scripts/gx_music.js"]
     },
     {
       "matches": ["https://store.gx.me/*"],
-      "js": ["content_scripts/gx_store_mixin.js"],
+      "js": ["browser-polyfill.min.js", "content_scripts/gx_store_mixin.js"],
       "css": ["content_scripts/gx_store_mixin.css"]
     }
   ],

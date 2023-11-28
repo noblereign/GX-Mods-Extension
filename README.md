@@ -1,6 +1,8 @@
 # GX Mods
  A WebExtension for Firefox. Add ambient music, typing sounds, and more to your browsing experience.
+
  **This is a Chrome-compatible version via Mozilla's [WebExtension polyfill](https://github.com/mozilla/webextension-polyfill). This is literally a low-effort port I did in 10 minutes. There are a lot of visual bugs, but it should still be fully functional.**
+
  *Tested on Vivaldi 6.4.3160.44 (Stable channel) (64-bit)*
 
 <img src='./first-time/gxm_settings.png' alt='Promotional image showing the settings popup for GX Mods.' width=60%>
@@ -61,7 +63,9 @@
 
 # Installation
  Download this branch as a ZIP file.
+
  Then, enable Developer Mode in your browser and load the extension.
+
  It isn't ideal, but I don't really feel like going through yet another addon review process -- especially since this still uses Manifest V2 ¯\_(ツ)_/¯
 
 # Usage

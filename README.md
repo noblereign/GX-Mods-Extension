@@ -66,7 +66,7 @@
 
  Then, enable Developer Mode in your browser and load the extension.
 
- It isn't ideal, but I don't really feel like going through yet another addon review process -- especially since this still uses Manifest V2 ¯\_(ツ)_/¯
+ It isn't ideal, but I don't really feel like going through yet another addon review process -- especially since this still uses Manifest V2 ¯\\_(ツ)_/¯
 
 # Usage
  By default, the extension comes with some default sound packs for you to play around with. Select one from the dropdown and the sounds will load in a second.

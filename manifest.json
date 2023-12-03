@@ -2,7 +2,7 @@
   "description": "Add ambient music, typing sounds, and more to your browsing experience.",
   "manifest_version": 2,
   "name": "GX Mods",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "developer": {
     "name": "Noble (@frost@wolfdo.gg), Taylor (@tay@tech.lgbt)",
     "url": "https://wolfdo.gg/@frost"
@@ -21,7 +21,10 @@
   "content_scripts": [
     {
       "matches": ["*://*/*"],
-      "js": ["content_scripts/gx_music.js"]
+      "js": ["content_scripts/gx_music.js"],
+      "all_frames": true,
+      "match_about_blank": true,
+      "run_at": "document_start"
     },
     {
       "matches": ["https://store.gx.me/*"],

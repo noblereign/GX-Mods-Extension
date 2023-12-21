@@ -570,10 +570,8 @@ browser.windows.onRemoved.addListener((windowId) => {
 });
 
 browser.runtime.onInstalled.addListener((details) => {
-    if (details.reason == "browser_update" || details.reason == "chrome_update") {
-        if (cachedSettings.sfxUpdates) {
-            play_browser_upgrade_sound = true;
-        }
+    if (details.reason == "browser_update" || details.reason == "chrome_update" || details.reason == "update") {
+        play_browser_upgrade_sound = true;
     } else if (details.reason == "install") {
         browser.tabs.create({ url: "/first-time/welcome.html" })
     }
@@ -939,6 +937,7 @@ browser.storage.local.get().then(
         loadBrowserSounds(result.sfxName || 'off')
 
         if (cachedSettings.sfxUpdates && play_browser_upgrade_sound) {
+            console.log("[GXM] Browser was updated!");
             SFXGainNode.gain.value = (cachedSettings.sfxVolume/100);
             playSound(currentBrowserSounds.LEVEL_UPGRADE ? currentBrowserSounds.LEVEL_UPGRADE : [], SFXGainNode);
             play_browser_upgrade_sound = false;

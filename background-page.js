@@ -49,6 +49,7 @@ function playSound(bufferArray,gainNode) {
     }          
 }
 
+let play_browser_upgrade_sound = false
 const cachedSettings = {
     enabled: true,
     autoMute: true,
@@ -571,8 +572,7 @@ browser.windows.onRemoved.addListener((windowId) => {
 browser.runtime.onInstalled.addListener((details) => {
     if (details.reason == "browser_update" || details.reason == "chrome_update") {
         if (cachedSettings.sfxUpdates) {
-            SFXGainNode.gain.value = (cachedSettings.sfxVolume/100);
-            playSound(currentBrowserSounds.LEVEL_UPGRADE ? currentBrowserSounds.LEVEL_UPGRADE : [], SFXGainNode);
+            play_browser_upgrade_sound = true;
         }
     } else if (details.reason == "install") {
         browser.tabs.create({ url: "/first-time/welcome.html" })
@@ -896,7 +896,7 @@ async function loadBrowserSounds(track) {
     }
 
     console.log("[GXM] All sounds loaded.")
-
+    soundEffectsLoaded = true;
     modData = null;
     return true
 }
@@ -929,6 +929,7 @@ browser.storage.local.get().then(
         cachedSettings.sfxLinks = (typeof result.sfxLinks == "undefined") ? false : result.sfxLinks;
         cachedSettings.sfxAltSwitch = (typeof result.sfxAltSwitch == "undefined") ? false : result.sfxAltSwitch;
 
+        cachedSettingsLoaded = true;
         if (result.consentedToJSD && result.shoppingMute) {
             initShoppingMutes()
         }
@@ -936,6 +937,12 @@ browser.storage.local.get().then(
         loadSounds(result.trackName || 'off')
         loadKeyboardSounds(result.keyboardName || 'off')
         loadBrowserSounds(result.sfxName || 'off')
+
+        if (cachedSettings.sfxUpdates && play_browser_upgrade_sound) {
+            SFXGainNode.gain.value = (cachedSettings.sfxVolume/100);
+            playSound(currentBrowserSounds.LEVEL_UPGRADE ? currentBrowserSounds.LEVEL_UPGRADE : [], SFXGainNode);
+            play_browser_upgrade_sound = false;
+        }
     },
     function(error) {
         console.log(`Error while enabling the initial track! ${error}`);

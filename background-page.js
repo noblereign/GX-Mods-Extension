@@ -571,6 +571,7 @@ browser.windows.onRemoved.addListener((windowId) => {
 
 browser.runtime.onInstalled.addListener((details) => {
     if (details.reason == "browser_update" || details.reason == "chrome_update" || details.reason == "update") {
+        console.log("Queued browser update sound");
         play_browser_upgrade_sound = true;
     } else if (details.reason == "install") {
         browser.tabs.create({ url: "/first-time/welcome.html" })

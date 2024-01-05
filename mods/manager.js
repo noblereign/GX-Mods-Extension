@@ -113,14 +113,8 @@ function getBase64(file) {
     });
 }
 
-/*const toBase64 = file => new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-});*/
-
 async function updateModList() {
+    console.log("[GXM] Attempting to update mod list in manager");
     try {
         let modData = await localforage.getItem(MOD_DATABASE_KEY);
         if (modData == null) {
@@ -631,17 +625,14 @@ acceptButton.onclick = function () {
     acceptButton.disabled = false
 };
 
-document.addEventListener("DOMContentLoaded", function() {
+if (document.readyState === "loading") {
+    console.log("[GXM Manager] Waiting for DOM Content Load");
+    document.addEventListener("DOMContentLoaded", function() {
+        updateModList();
+    });    
+} else {
+    console.log("[GXM Manager] DOM content is already loaded!");
     updateModList();
-});
+}
 
 browser.storage.local.onChanged.addListener(updateModList);
-/*
-browser.runtime.onMessage.addListener(async (message, sender) => {
-    if ((typeof message === 'object') && (message != null)) {
-        if (message.intent == "updateModLists") {
-            console.log('[GXM] updating mod list')
-            updateModList();
-        }
-    }
-});*/

@@ -65,6 +65,13 @@
  *The minimum version for full functionality is Firefox 95, but setting changes will still require a restart.*
 
 # Usage
+
+ **_Installing mods won't work properly in private windows!_** *You'll need to install mods and change your settings in a normal window first.*
+ 
+ After that, it should be good to use in private windows, provided your browser doesn't start like that by default. Maybe I'll be able to fix this sometime in the future.
+
+
+
  By default, the extension comes with some default sound packs for you to play around with. Select one from the dropdown and the sounds will load in a second.
  
  If you want to play around with the browser sounds, [this page](https://www-archive.mozilla.org/projects/ui/accessibility/unix/testcase/html/#Button_Test_Cases) is a pretty good place to start.

@@ -75,6 +75,8 @@ const cachedSettings = {
 }
 
 let cTrack = "off"
+let cSounds = "off"
+let cKeyboard = "off"
 
 let MasterGainNode = audioContext.createGain();
 MasterGainNode.gain.value = (cachedSettings.volume/100);
@@ -451,13 +453,13 @@ async function onExtensionMessage(message, sender) {
         if (newTrack == cTrack) return;
         return loadSounds(newTrack)
     } else if (message.startsWith('sfxchange_')) {
-        var newTrack = message.replace("sfxchange_","")
-        if (newTrack == cTrack) return;
-        return loadBrowserSounds(newTrack)
+        var newSounds = message.replace("sfxchange_","")
+        if (newSounds == cSounds) return;
+        return loadBrowserSounds(newSounds)
     } else if (message.startsWith('keyboardchange_')) {
-        var newTrack = message.replace("keyboardchange_","")
-        if (newTrack == cTrack) return;
-        return loadKeyboardSounds(newTrack)
+        var newKeyboard = message.replace("keyboardchange_","")
+        if (newKeyboard == cKeyboard) return;
+        return loadKeyboardSounds(newKeyboard)
     } else if (message.startsWith('mousehover')) {
         if (cachedSettings.sfxHovers) {
             SFXGainNode.gain.value = (cachedSettings.sfxVolume/100);
@@ -621,7 +623,7 @@ async function parse(file) {
 
 async function loadSounds(track) {
     cTrack = track
-    console.log("Attempting to load",cTrack)
+    console.log("Attempting to load BGM",cTrack)
 
     sourceNodes.forEach(sourceNode => sourceNode.stop());
 
@@ -722,7 +724,7 @@ async function loadSounds(track) {
         }
     }
 
-    console.log("[GXM] All sounds loaded.")
+    console.log("[GXM] All BGM sounds loaded.")
 
     modData = null;
     const startTime = audioContext.currentTime + 0.1; // Delay the start if needed
@@ -749,6 +751,9 @@ async function loadSounds(track) {
 }
 
 async function loadKeyboardSounds(track) {
+    cKeyboard = track
+    console.log("Attempting to load Keyboard",cKeyboard)
+
     KeyboardGainNode.disconnect()
     
     await delay(500);
@@ -817,7 +822,7 @@ async function loadKeyboardSounds(track) {
         }
     }
 
-    console.log("[GXM] All sounds loaded.")
+    console.log("[GXM] All keyboard sounds loaded.")
 
     modData = null;
     return true
@@ -826,6 +831,8 @@ async function loadKeyboardSounds(track) {
 
 
 async function loadBrowserSounds(track) {
+    cSounds = track
+    console.log("Attempting to load SFX",cSounds)
     SFXGainNode.disconnect()
     
     await delay(500);
@@ -894,7 +901,7 @@ async function loadBrowserSounds(track) {
         }
     }
 
-    console.log("[GXM] All sounds loaded.")
+    console.log("[GXM] All browser sounds loaded.")
 
     if (cachedSettings.sfxUpdates && play_browser_upgrade_sound) {
         console.warn("[GXM] Browser was updated!");

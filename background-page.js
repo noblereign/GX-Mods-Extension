@@ -1,10 +1,13 @@
+const Clip = Phonograph.Clip
+const getContext = Phonograph.getContext
 console.log('[GXM] Loading background tab...')
+
 const MOD_DATABASE_KEY = "GXMusicMods"
 
 let shoppingListCache = ""
 let shoppingMute = false
 
-let audioContext = new (window.AudioContext || window.webkitAudioContext)();
+let audioContext = getContext();
 
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
@@ -147,8 +150,7 @@ setInterval(function() {
     updateLevels()
 }, 16.6)
 
-var sounds = [];
-var sourceNodes = [];
+var phonographClips = [];
 var gainNodes = [];
 
 /*function getBase64(file) {
@@ -625,11 +627,9 @@ async function loadSounds(track) {
     cTrack = track
     console.log("Attempting to load BGM",cTrack)
 
-    sourceNodes.forEach(sourceNode => sourceNode.stop());
-
-
-
-    sourceNodes.forEach(sourceNode => sourceNode.disconnect());
+    phonographClips.forEach(clip => clip.pause());
+    
+    phonographClips.forEach(clip => clip.dispose());
     gainNodes.forEach(gainNode => gainNode.disconnect());
     MasterGainNode.disconnect()
     
@@ -645,15 +645,12 @@ async function loadSounds(track) {
     MasterGainNode.gain.value = (cachedSettings.volume/100);
     MasterGainNode.connect(audioContext.destination);
 
-    sounds = null
-    sourceNodes = null
+    phonographClips = null
     gainNodes = null
-    promises = null
 
-    sounds = []
-    sourceNodes = []
+    phonographClips = []
     gainNodes = []
-    promises = []
+    let promises = []
 
     if (track == 'off') return console.log("[GXM] Music is off");
 
@@ -672,57 +669,83 @@ async function loadSounds(track) {
         let layerData = modData[track].layers
         for (const blob of layerData){
             console.log("Loading mod layer");
-            //console.log(blob)
-            //console.log(blob.type)
+            console.log(blob)
+            console.log(blob.type)
+            let url = URL.createObjectURL(blob)
+            console.log("creating clip")
+            let layerClip = new Clip({ // make a new clip with phonograph
+                url: url,
+                loop: true,
+                volume: 1
+            });
 
-            console.log("parsing")
-            let arrayBuffer = await parse(blob)
+            layerClip.on('loaderror', err => {
+                browser.notifications.create({
+                    type: "basic",
+                    iconUrl: browser.runtime.getURL("icons/gxm_large_outline.png"),
+                    title: "Music failed to load!",
+                    message: "Something went wrong, check add-on console in about:debugging for details",
+                });
+                console.error("[GXM ERROR]",err);
+            });
+            
+            layerClip.on('playbackerror', err => {
+                browser.notifications.create({
+                    type: "basic",
+                    iconUrl: browser.runtime.getURL("icons/gxm_large_outline.png"),
+                    title: "Music playback error!",
+                    message: "Something went wrong, check add-on console in about:debugging for details",
+                });
+                console.error("[GXM ERROR]",err);
+            });
+
+            const gainNode = audioContext.createGain(); // create a gain node for layering
+            gainNode.gain.value = 0.0;
+            
+            layerClip.connect(gainNode); // connect 'em both up
+            gainNode.connect(MasterGainNode);
+
+            phonographClips.push(layerClip); // add the clip and the node to the obj
+            gainNodes.push(gainNode);
+
             console.log("buffering")
-            const soundBuffer = await audioContext.decodeAudioData(arrayBuffer);
-            if (soundBuffer) {
-                const sourceNode = audioContext.createBufferSource();
-                sourceNode.buffer = soundBuffer;
-                sourceNode.loop = true;
-                
-                const gainNode = audioContext.createGain();
-                gainNode.gain.value = 0.0; // Adjust the volume as needed
-                
-                sourceNode.connect(gainNode);
-                gainNode.connect(MasterGainNode);
-                
-                sounds.push(soundBuffer);
-                sourceNodes.push(sourceNode);
-                gainNodes.push(gainNode);
-            } else {
-                console.log("Layer doesn't exist lol");
-            }
+            promises.push(layerClip.buffer())
         }
     } else {
         console.log("[GXM] Loading built-in track")
         for (let i = 1; i < 7; i++) {
             const url = `./music/${track}_${i}.mp3`;
             console.log("Loading layer " + i);
-            const soundBuffer = await loadAndDecodeAudio(url);
-            if (soundBuffer) {
-                const sourceNode = audioContext.createBufferSource();
-                sourceNode.buffer = soundBuffer;
-                sourceNode.loop = true;
+
+            const response = await fetch(url); // check to see if it exists
+            if (response.ok) {
+                console.log("creating clip")
+                let layerClip = new Clip({ // make a new clip with phonograph
+                    url: url,
+                    loop: true,
+                    volume: 1
+                });
+
+                const gainNode = audioContext.createGain(); // create a gain node for layering
+                gainNode.gain.value = 0.0;
                 
-                const gainNode = audioContext.createGain();
-                gainNode.gain.value = 0.0; // Adjust the volume as needed
-                
-                sourceNode.connect(gainNode);
+                layerClip.connect(gainNode); // connect 'em both up
                 gainNode.connect(MasterGainNode);
-                
-                //const sound = new Audio(url);
-                sounds.push(soundBuffer);
-                sourceNodes.push(sourceNode);
+
+                phonographClips.push(layerClip); // add the clip and the node to the obj
                 gainNodes.push(gainNode);
+
+                console.log("buffering")
+                promises.push(layerClip.buffer())
             } else {
                 console.log("Layer " + i + " doesn't exist lol");
             }
         }
     }
+
+    await Promise.all(promises).catch(error => {
+        console.warn('[GXM ERROR] Something went wrong while buffering...', {cause: error});
+    });
 
     console.log("[GXM] All BGM sounds loaded.")
 
@@ -733,8 +756,8 @@ async function loadSounds(track) {
         function(result) {
             console.log("[GXM] Queueing music")
             if (result.trackName == cTrack || typeof result.trackName == "undefined") {
-                sourceNodes.forEach((sourceNode, index) => {
-                    sourceNode.start(startTime);
+                phonographClips.forEach((clip, index) => {
+                    clip.play(startTime);
                 });
                 console.log("[GXM] Music queued")
             } else {
@@ -969,8 +992,8 @@ browser.storage.local.onChanged.addListener(updateSettings);
 
 browser.runtime.onSuspend.addListener(function () {
     console.log("[GXM] oghh,, goodbye world")
-    sourceNodes.forEach(sourceNode => sourceNode.stop());
-    sourceNodes.forEach(sourceNode => sourceNode.disconnect());
+    phonographClips.forEach(clip => clip.pause());
+    phonographClips.forEach(clip => clip.dispose());
     gainNodes.forEach(gainNode => gainNode.disconnect());
     MasterGainNode.disconnect()
     MasterGainNode = null
@@ -979,10 +1002,8 @@ browser.runtime.onSuspend.addListener(function () {
     SFXGainNode.disconnect()
     SFXGainNode = null
     audioContext.close()
-    sounds = null
-    sourceNodes = null
+    phonographClips = null
     gainNodes = null
-    promises = null
     console.log("[GXM] see u later")
 })
 

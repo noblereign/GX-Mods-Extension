@@ -594,7 +594,8 @@ const fileTypes = [
   "audio/wave",
   "audio/wav",
   "audio/x-wav",
-  "audio/x-pn-wav"
+  "audio/x-pn-wav",
+  "video/ogg",
 ];
 
 function validFileType(file) {

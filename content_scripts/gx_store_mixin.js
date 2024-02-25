@@ -30,7 +30,7 @@ async function initContentScript() {
     async function searchForButton() {
         console.log("[GXM] Searching for button...")
         for (const a of document.querySelectorAll("a")) {
-            if (a.textContent.includes("Try on Opera GX Desktop")) {
+            if (a.textContent.includes("Try on Opera GX")) {
                 console.log(a.textContent)
                 installModButton = a
                 return true

@@ -299,10 +299,33 @@ SFXaltSwitchesBox.addEventListener('change', (event) => {
     saveOptions()
 })
 
+function closePopOut()
+{
+  return Promise.all(
+    [
+      browser.runtime.getBrowserInfo(),
+      browser.runtime.getPlatformInfo()
+    ]
+  ).then(
+    data =>
+    {
+      if (data[0].name == 'Firefox' &&
+          data[1].os == 'android')
+      {
+        return browser.tabs.update(
+          {active: true}
+        );
+      }
+    }
+  ).finally(
+    window.close
+  );
+}
 
 var modsButton = document.getElementById('createModButton');
 modsButton.onclick = function() {
     browser.runtime.openOptionsPage()
+    closePopOut()
 }
 
 const iDontConsent = document.querySelector("#cancel")

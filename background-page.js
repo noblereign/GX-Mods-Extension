@@ -564,12 +564,15 @@ browser.tabs.onRemoved.addListener((tab, removeInfo) => {
     }
 })
 
-browser.windows.onRemoved.addListener((windowId) => {
-    if (cachedSettings.sfxTabs) {
-        SFXGainNode.gain.value = (cachedSettings.sfxVolume/100);
-        playSound(currentBrowserSounds.TAB_CLOSE ? currentBrowserSounds.TAB_CLOSE : [], SFXGainNode);
-    }
-});
+if (typeof browser.windows !== "undefined") {
+    browser.windows.onRemoved.addListener((windowId) => {
+        if (cachedSettings.sfxTabs) {
+            SFXGainNode.gain.value = (cachedSettings.sfxVolume/100);
+            playSound(currentBrowserSounds.TAB_CLOSE ? currentBrowserSounds.TAB_CLOSE : [], SFXGainNode);
+        }
+    });
+}
+
 
 browser.runtime.onInstalled.addListener((details) => {
     if (details.reason == "browser_update" || details.reason == "chrome_update" || details.reason == "update") {
@@ -1037,8 +1040,16 @@ async function shouldShoppingMute(info) {
         let tabId = (typeof(info) == "number" ? info : info.tabId)
         let tabInfo = await browser.tabs.get(tabId);
         if (tabInfo.active) {
-            let currentWindow = await browser.windows.getCurrent();
-            if (tabInfo.windowId == currentWindow.id) {
+            let allowedToCheck = false
+            if (typeof browser.windows !== "undefined") {
+                let currentWindow = await browser.windows.getCurrent();
+                if (tabInfo.windowId == currentWindow.id) {
+                    allowedToCheck = true
+                }
+            } else { // probably on mobile, just allow it
+                allowedToCheck = true
+            }
+            if (allowedToCheck) {
                 let currentURL = new URL(tabInfo.url)
                 //console.log(currentURL)
                 if (currentURL.host && (currentURL.host != "")) {

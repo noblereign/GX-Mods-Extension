@@ -53,6 +53,7 @@ let play_browser_upgrade_sound = false
 const cachedSettings = {
     enabled: true,
     autoMute: true,
+    unfocusedMute: false,
     pageLoad: false,
     download: false,
     volume: 50,
@@ -116,6 +117,7 @@ let FAKE_KEYBOARD_FILESYSTEM = {
 var decay = 0.03;
 var distance = 10;
 var muted = false;
+var mutedDueToFocus = false;
 
 var lerpedLevel = 0
 var level = 0
@@ -136,7 +138,7 @@ function updateLevels() {
     MasterGainNode.gain.value = (cachedSettings.volume/100)
 
     for (var gainNode of gainNodes) {
-        gainNode.gain.value = lerp(gainNode.gain.value, ((muted && cachedSettings.autoMute) || !cachedSettings.enabled || (shoppingMute && cachedSettings.muteShopping)) ? 0 : Math.max(Math.min(l,1),0), clamp(delta*5,0,1));
+        gainNode.gain.value = lerp(gainNode.gain.value, ((muted && cachedSettings.autoMute) || !cachedSettings.enabled || (shoppingMute && cachedSettings.muteShopping) || (mutedDueToFocus && cachedSettings.unfocusedMute)) ? 0 : Math.max(Math.min(l,1),0), clamp(delta*5,0,1));
         l--;
     }
     lerpedLevel = lerp(lerpedLevel,level,clamp(delta*20,0,1))
@@ -530,6 +532,24 @@ async function onExtensionMessage(message, sender) {
             SFXGainNode.gain.value = (cachedSettings.sfxVolume/100);
             playSound(currentBrowserSounds.SWITCH_TOGGLE ? currentBrowserSounds.SWITCH_TOGGLE : [], SFXGainNode);
         }
+    } else if (message.startsWith('visibility=')) {
+        setTimeout(function(){
+            browser.tabs
+            .executeScript({
+                code: "document.hidden"
+            })
+            .then(results => {
+                let isHidden = results[0];
+                mutedDueToFocus = isHidden
+            })
+            .catch(function(err) {
+                console.warn("Something went wrong while checking focus!")
+                console.warn(err)
+                //console.warn("Falling back to sent visibility...")
+               // var isHidden = message.replace("visibility=","")
+               // mutedDueToFocus = (isHidden == "true")
+            })
+        },100);
     } else {
         console.log("[GXM] weird message received:",message)     
     }
@@ -541,7 +561,6 @@ browser.runtime.onMessage.addListener(onExtensionMessage);
 
 async function checkTabAudible() {
     var tabs = await browser.tabs.query({audible: true})
-    //console.log("[GXM] There are",tabs.length,"audible tabs")
     muted = tabs.length
 }
 browser.tabs.onUpdated.addListener(checkTabAudible)
@@ -571,6 +590,10 @@ if (typeof browser.windows !== "undefined") {
             playSound(currentBrowserSounds.TAB_CLOSE ? currentBrowserSounds.TAB_CLOSE : [], SFXGainNode);
         }
     });
+
+    browser.windows.onFocusChanged.addListener((windowId) => {
+        mutedDueToFocus = (windowId == browser.windows.WINDOW_ID_NONE)
+    }); 
 }
 
 
@@ -610,6 +633,19 @@ browser.downloads.onChanged.addListener(handleChanged);
 
 checkTabAudible();
 setTimeout(checkTabAudible,10000);
+
+/* setInterval(async function() {
+    var tabs = await browser.tabs.query({currentWindow: true})
+    browser.tabs
+    .executeScript({
+        code: "document.hidden"
+    })
+    .then(results => {
+        console.log(results[0])
+    })
+    .catch(console.error);
+    console.log("Checked for focused tab")
+}, 200) */
 
 async function parse(file) {
     const reader = new FileReader();
@@ -922,9 +958,11 @@ async function loadBrowserSounds(track) {
 
 
 browser.storage.local.get().then(
-    function(result) {
+    async function(result) {
+        let platformInfo = await browser.runtime.getPlatformInfo()
         cachedSettings.enabled = (typeof result.enabled == "undefined") ? true : result.enabled;
         cachedSettings.autoMute = (typeof result.autoMute == "undefined") ? true : result.autoMute;
+        cachedSettings.unfocusedMute = (typeof result.unfocusedMute == "undefined") ? (platformInfo.os == 'android' ? true : false) : result.unfocusedMute;
         cachedSettings.pageLoad = (typeof result.pageLoad == "undefined") ? false : result.pageLoad;
         cachedSettings.download = (typeof result.download == "undefined") ? false : result.download;
         cachedSettings.volume = (typeof result.volume == "undefined") ? 50 : result.volume;
@@ -969,47 +1007,6 @@ function updateSettings(changes) {
 }
 
 browser.storage.local.onChanged.addListener(updateSettings);
-
-browser.runtime.onSuspend.addListener(function () {
-    console.log("[GXM] oghh,, goodbye world")
-    sourceNodes.forEach(sourceNode => sourceNode.stop());
-    sourceNodes.forEach(sourceNode => sourceNode.disconnect());
-    gainNodes.forEach(gainNode => gainNode.disconnect());
-    MasterGainNode.disconnect()
-    MasterGainNode = null
-    KeyboardGainNode.disconnect()
-    KeyboardGainNode = null
-    SFXGainNode.disconnect()
-    SFXGainNode = null
-    audioContext.close()
-    sounds = null
-    sourceNodes = null
-    gainNodes = null
-    promises = null
-    console.log("[GXM] see u later")
-})
-
-browser.runtime.onSuspendCanceled.addListener(function () {
-    console.log("[GXM] oh we're going to live")
-    
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
-    MasterGainNode = audioContext.createGain();
-    MasterGainNode.gain.value = (cachedSettings.volume/100);
-    MasterGainNode.connect(audioContext.destination);
-
-    SFXGainNode = audioContext.createGain();
-    SFXGainNode.gain.value = (cachedSettings.sfxVolume/100);
-    SFXGainNode.connect(audioContext.destination);
-
-    KeyboardGainNode = audioContext.createGain();
-    KeyboardGainNode.gain.value = (cachedSettings.keyboardVolume/100);
-    KeyboardGainNode.connect(audioContext.destination);
-    
-    loadSounds(result.trackName || 'off')
-
-    console.log("[GXM] we back")
-})
 
 console.log("[GXM] updating the shop websites list")
 
@@ -1091,3 +1088,45 @@ function initShoppingMutes() {
         })
     }
 }
+
+
+browser.runtime.onSuspend.addListener(function () {
+    console.log("[GXM] oghh,, goodbye world")
+    sourceNodes.forEach(sourceNode => sourceNode.stop());
+    sourceNodes.forEach(sourceNode => sourceNode.disconnect());
+    gainNodes.forEach(gainNode => gainNode.disconnect());
+    MasterGainNode.disconnect()
+    MasterGainNode = null
+    KeyboardGainNode.disconnect()
+    KeyboardGainNode = null
+    SFXGainNode.disconnect()
+    SFXGainNode = null
+    audioContext.close()
+    sounds = null
+    sourceNodes = null
+    gainNodes = null
+    promises = null
+    console.log("[GXM] see u later")
+})
+
+browser.runtime.onSuspendCanceled.addListener(function () {
+    console.log("[GXM] oh we're going to live")
+    
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+    MasterGainNode = audioContext.createGain();
+    MasterGainNode.gain.value = (cachedSettings.volume/100);
+    MasterGainNode.connect(audioContext.destination);
+
+    SFXGainNode = audioContext.createGain();
+    SFXGainNode.gain.value = (cachedSettings.sfxVolume/100);
+    SFXGainNode.connect(audioContext.destination);
+
+    KeyboardGainNode = audioContext.createGain();
+    KeyboardGainNode.gain.value = (cachedSettings.keyboardVolume/100);
+    KeyboardGainNode.connect(audioContext.destination);
+    
+    loadSounds(result.trackName || 'off')
+
+    console.log("[GXM] we back")
+})

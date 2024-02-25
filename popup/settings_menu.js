@@ -8,6 +8,9 @@ const consentForm = document.querySelector(".consentOverlay")
 
 const enabledBox = document.getElementById('enabled');
 const muteAutoBox = document.getElementById('muteAuto');
+const muteFocusBox = document.getElementById('muteFocus');
+const muteFocusContainer = document.getElementById('muteFocusContainer')
+
 const pageLoadBox = document.getElementById('pageLoad');
 const downloadsBox = document.getElementById('download');
 var volumeSlider = document.getElementById('volume');
@@ -114,6 +117,7 @@ function saveOptions() {
         trackName: trackSelector.value,
         enabled: enabledBox.checked,
         autoMute: muteAutoBox.checked,
+        unfocusedMute: muteFocusBox.checked,
         pageLoad: pageLoadBox.checked,
         download: downloadsBox.checked,
         volume: volumeSlider.value,
@@ -139,13 +143,21 @@ function saveOptions() {
     });
 }
 
-function restoreOptions() {
+async function restoreOptions() {
+    let platformInfo = await browser.runtime.getPlatformInfo()
+    if (platformInfo.os == 'android') {
+        muteFocusBox.disabled = true;
+        muteFocusContainer.classList.add("disabled");
+        muteFocusBox.checked = true; // android must always have this on or else it'll play in other apps :/
+    }
+
     function setCurrentChoice(result) {
         consentedToJSD = (typeof result.consentedToJSD == "undefined") ? false : result.consentedToJSD;
         // MUSIC
         trackSelector.value = result.trackName || "off";
         enabledBox.checked = (typeof result.enabled == "undefined") ? true : result.enabled;
         muteAutoBox.checked = (typeof result.autoMute == "undefined") ? true : result.autoMute;
+        muteFocusBox.checked = (typeof result.unfocusedMute == "undefined") ? (platformInfo.os == 'android' ? true : false) : result.unfocusedMute;
         pageLoadBox.checked = (typeof result.pageLoad == "undefined") ? false : result.pageLoad;
         downloadsBox.checked = (typeof result.download == "undefined") ? false : result.download;
         volumeSlider.value = result.volume || 50;
@@ -171,7 +183,6 @@ function restoreOptions() {
         KeyboardSelector.value = result.keyboardName || "off";
         KeyboardVolumeSlider.value = result.keyboardVolume || 50;
 
-
         volumeKeyboardPercentage.textContent = KeyboardVolumeSlider.value;
 
         loadingShimmer.setAttribute("disabled", "");
@@ -187,7 +198,7 @@ function restoreOptions() {
   
 document.addEventListener("DOMContentLoaded", async function() {
     await updateModList();
-    restoreOptions();
+    await restoreOptions();
 });
 
 trackSelector.addEventListener("change", function() {
@@ -253,6 +264,9 @@ enabledBox.addEventListener('change', (event) => {
     saveOptions()
 })
 muteAutoBox.addEventListener('change', (event) => {
+    saveOptions()
+})
+muteFocusBox.addEventListener('change', (event) => {
     saveOptions()
 })
 pageLoadBox.addEventListener('change', (event) => {

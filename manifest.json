@@ -2,7 +2,7 @@
   "description": "Add ambient music, typing sounds, and more to your browsing experience.",
   "manifest_version": 2,
   "name": "GX Mods",
-  "version": "4.1.0",
+  "version": "4.1.1",
   "developer": {
     "name": "Noble (@frost@wolfdo.gg), Taylor (@tay@tech.lgbt)",
     "url": "https://github.com/noblereign/GX-Mods-Extension"
@@ -55,6 +55,9 @@
     "gecko": {
       "id": "gxmods@glacier.dog",
       "strict_min_version": "57.0"
+    },
+    "gecko_android": {
+      "strict_min_version": "120.0"
     }
   }
 }

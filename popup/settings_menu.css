@@ -248,12 +248,16 @@ select:focus {
 
 
  /* The switch - the box around the slider */
-.switch {
+ .switch {
   position: relative;
   display: inline-block;
   height: 20px;
   width: 40px;
   right:5px;
+}
+
+.switchContainer.disabled {
+  opacity: .25
 }
 
 /* Hide default HTML checkbox */

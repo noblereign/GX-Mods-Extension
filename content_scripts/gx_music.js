@@ -18,6 +18,10 @@ function sendKeyboardCommand(event) {
   }
 }
 
+function sendVisibilityChange(event) {
+  browser.runtime.sendMessage('visibility=' + document.hidden);
+}
+
 let lastCursor = ""
 function sendCursorEvent(event) {
   var cursor = getComputedStyle(event.target).cursor;
@@ -73,4 +77,9 @@ function sendCheckedEvent(event) {
     once: false,
     passive: true
   })
+  document.addEventListener("visibilitychange",sendVisibilityChange,{
+    capture: true,
+    once: false,
+    passive: true
+  }) 
 })();

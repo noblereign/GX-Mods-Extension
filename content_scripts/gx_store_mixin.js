@@ -14,7 +14,17 @@ function addLocationObserver(callback) {
 
 function observerCallback() {
     if (window.location.href != lastHref) {
-        if (window.location.href.startsWith('https://store.gx.me/mods/')) {
+        let pathArray = window.location.href.split('/');
+        let arrayPos = pathArray.indexOf('mods') + 1;
+        let modId = pathArray[arrayPos]
+        if ((!modId) || (modId == "") || (modId.includes("http")) || (modId.includes("gx.me"))) {
+            if (!window.location.href.includes('/mods/')) {
+                console.log("[GXM] Injecting into home page...")
+                initHomeScript()
+            }
+        } else {
+            console.log("[GXM] Injecting into mod page...")
+            console.log("[GXM] Detected ID:",modId)
             initContentScript()
         }
     }
@@ -25,12 +35,164 @@ addLocationObserver(observerCallback)
 observerCallback()
 
 var timeout = 3000; // 3000ms = 3 seconds
+
+function fetchRetry(url, options = {}, retries = 3, backoff = 300) {
+    const retryCodes = [408, 500, 502, 503, 504, 522, 524];
+    return fetch(url, options)
+        .then(res => {
+            if (res.ok) {
+                console.log("Fetch succeeded");
+                return res.json();
+            }
+
+            if (retries > 0 && retryCodes.includes(res.status)) {
+                setTimeout(() => {
+                    return fetchRetry(url, options, retries - 1, backoff * 2);
+                }, backoff);
+            } else {
+                throw new Error(res);
+            }
+        })
+        .catch(console.error);
+}
+
+async function initHomeScript() {
+    async function searchForButton() {
+        console.log("[GXM] Searching for button...")
+        for (const a of document.querySelectorAll(".gxbtn-lg.gxbtn-primary")) {
+            if (a.textContent.includes("Opera GX") && !a.classList.contains('gxm_injected')) {
+                console.log(a.textContent)
+                let installModButton = a
+                installModButton.setAttribute("disabled","")
+                installModButton.classList.add("gxm_injected");
+                installModButton.textContent = "A moment, please..."
+                installModButton.removeAttribute("href")
+
+                let foundHeadline = a.parentElement.parentElement.parentElement.querySelector('.headline4')
+                if (foundHeadline) {
+                    let foundHref = foundHeadline.href
+                    if (foundHref) {
+                        let pathArray = foundHref.split('/');
+                        let arrayPos = pathArray.indexOf('mods') + 1;
+                        let modId = pathArray[arrayPos]
+                        console.log("[GXM] Mod ID:",modId)
+                        if ((!modId) || (modId == "") || (modId.includes("http")) || (modId.includes("gx.me"))) {
+                            installModButton.textContent = "Couldn't get mod ID."
+                        } else {
+                            let apiResponse = fetchRetry(`https://api.gx.me/store/v3/mods/${modId}`)
+                            .then(async function(result) {
+                                //console.log(result);
+                                if (result.data) {
+                                    if ((result.data.contentUrl != null) && (result.data.manifestSource != null) && (result.data.manifestSource.mod != null) && (result.data.manifestSource.mod.payload != null) && (result.data.packageVersion != null) && (result.data.modShortId != null)) {
+                                        let musicArray = result.data.manifestSource.mod.payload.background_music
+                                        let keyboardArray = result.data.manifestSource.mod.payload.keyboard_sounds
+                                        let browserArray = result.data.manifestSource.mod.payload.browser_sounds
+    
+                                        if (musicArray || keyboardArray || browserArray) {
+                                            /*https://play.gxc.gg/mods/922a6edc-98e4-432e-8096-5892210dd9b0/e3a14659-05e5-4bb7-878c-38249f58968b/2f4daefd-0f05-4fb5-8893-ca8f64b785ee/contents/music/layer1.wav*/
+                                            let modInternalId = result.data.mangledTitle + "-" + result.data.crxId
+                                            let modStorePage = `https://store.gx.me/mods/${result.data.modShortId}/${result.data.mangledTitle}/`
+                                            let modVersion = result.data.packageVersion
+                                            let modName = result.data.title
+                                            let baseURL = result.data.contentUrl
+                                            installModButton.textContent = "Almost there..."
+                                            let installData = await browser.runtime.sendMessage({
+                                                intent: "getModState",
+                                                modId: modInternalId,
+                                            })
+                                            console.log("Got install data")
+                                            if ((installData != false) && (installData != null)) {
+                                                //console.log(installData)
+                                                if (installData.layers) {
+                                                    if (installData.version) {
+                                                        if (installData.version != modVersion) {
+                                                            installModButton.textContent = "Update"
+                                                        } else {
+                                                            installModButton.textContent = "Reinstall"
+                                                        }
+                                                    } else {
+                                                        installModButton.textContent = "Replace local version"
+                                                    }
+                                                } else {
+                                                    installModButton.textContent = "Install with GXM"
+                                                }
+                                                installModButton.removeAttribute("disabled")
+                                                installModButton.addEventListener("click", async (event) => {
+                                                    console.log("[GXM] Initiating install")
+                                                    installModButton.setAttribute("disabled","")
+                                                    installModButton.textContent = "Installing..."
+    
+                                                    let installResult = await browser.runtime.sendMessage({
+                                                        intent: "installMod",
+                                                        modId: modInternalId,
+                                                        modContentUrl: baseURL,
+                                                        modLayers: musicArray,
+                                                        modKeyboardSounds: keyboardArray,
+                                                        modBrowserSounds: browserArray,
+                                                        modVersion: modVersion,
+                                                        modDisplayName: modName,
+                                                        modStorePage: modStorePage
+                                                    })
+    
+                                                    console.log("Install result");
+                                                    console.log(installResult);
+                                                    if (installResult.succeeded) {
+                                                        installModButton.textContent = "Reinstall"
+                                                    } else {
+                                                        installModButton.textContent = installResult.error ? installResult.error : "Something went wrong."
+                                                    }
+                                                    installModButton.removeAttribute("disabled")
+                                                });
+                                                browser.runtime.onMessage.addListener((message) => {
+                                                    if (message.targetMod && (message.targetMod == modInternalId)) {
+                                                        installModButton.textContent = message.newText ? message.newText : "..."
+                                                    }
+                                                });
+                                            } else {
+                                                installModButton.textContent = "Failed to read from disk."
+                                            }
+                                        } else {
+                                            installModButton.textContent = "Mod contains no sounds."
+                                        }
+                                    } else {
+                                        installModButton.textContent = "Can't verify this mod."
+                                    }
+                                } else {
+                                    installModButton.textContent = "GX.store returned empty value."
+                                }
+                            })
+                            .catch(function (error) {
+                                console.log(`Something happened: ${error}`);
+                                installModButton.textContent = "Failed to get API response."
+                            });
+                        }
+                    } else {
+                        installModButton.textContent = "Couldn't get mod ID."
+                    }
+                } else {
+                    installModButton.textContent = "Couldn't get mod ID."
+                }
+            }
+        }
+    }
+    let timesDone = 0
+    
+    var intervalId = setInterval(function() {
+        searchForButton()
+        timesDone++
+        if (timesDone >= 12) {
+            clearInterval(intervalId);
+        }
+    }, 500);
+
+}
+
 async function initContentScript() {
     let installModButton = null;
     async function searchForButton() {
         console.log("[GXM] Searching for button...")
-        for (const a of document.querySelectorAll("a")) {
-            if (a.textContent.includes("Try on Opera GX")) {
+        for (const a of document.querySelectorAll(".gxbtn-lg.gxbtn-primary")) {
+            if (a.textContent.includes("Opera GX")) {
                 console.log(a.textContent)
                 installModButton = a
                 return true
@@ -65,28 +227,6 @@ async function initContentScript() {
                 setTimeout(waitForFoo.bind(this, resolve, reject), 30);
         }
     }
-
-    function fetchRetry(url, options = {}, retries = 3, backoff = 300) {
-        const retryCodes = [408, 500, 502, 503, 504, 522, 524];
-        return fetch(url, options)
-            .then(res => {
-                if (res.ok) {
-                    console.log("Fetch succeeded");
-                    return res.json();
-                }
-
-                if (retries > 0 && retryCodes.includes(res.status)) {
-                    setTimeout(() => {
-                        return fetchRetry(url, options, retries - 1, backoff * 2);
-                    }, backoff);
-                } else {
-                    throw new Error(res);
-                }
-            })
-            .catch(console.error);
-    }
-
-
     
     // This runs the promise code
     waitForButton(timeout).then(function(){
@@ -96,9 +236,10 @@ async function initContentScript() {
         installModButton.removeAttribute("href")
 
         let pathArray = window.location.pathname.split('/');
-        let modId = pathArray[2]
+        let arrayPos = pathArray.indexOf('mods') + 1;
+        let modId = pathArray[arrayPos]
         console.log("[GXM] Mod ID:",modId)
-        if (!modId) {
+        if ((!modId) || (modId == "") || (modId.includes("http")) || (modId.includes("gx.me"))) {
             installModButton.textContent = "Couldn't get mod ID."
         } else {
             let apiResponse = fetchRetry(`https://api.gx.me/store/v3/mods/${modId}`)
@@ -164,6 +305,11 @@ async function initContentScript() {
                                         installModButton.textContent = installResult.error ? installResult.error : "Something went wrong."
                                     }
                                     installModButton.removeAttribute("disabled")
+                                });
+                                browser.runtime.onMessage.addListener((message) => {
+                                    if (message.targetMod && (message.targetMod == modInternalId)) {
+                                        installModButton.textContent = message.newText ? message.newText : "..."
+                                    }
                                 });
                             } else {
                                 installModButton.textContent = "Failed to read from disk."

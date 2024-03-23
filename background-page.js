@@ -194,6 +194,20 @@ function fetchRetry(url, options = {}, retries = 3, backoff = 300) {
 let currentKeyboardSounds = {}
 let currentBrowserSounds = {}
 
+function updateInstallerButtons(modId,text) {
+    browser.tabs.query({ url: "*://*.store.gx.me/*" }).then(tabs => {
+        for (const tab of tabs) {
+            browser.tabs
+              .sendMessage(tab.id, {
+                targetMod: modId,
+                newText: text
+            })
+              .catch(console.warn);
+        }
+    })
+    .catch(console.warn);
+}
+
 async function onExtensionMessage(message, sender) {
     //console.log('[GXM] incoming message',message)
     if ((typeof message === 'object') && (message != null)) {
@@ -216,6 +230,7 @@ async function onExtensionMessage(message, sender) {
 
             if (message.modLayers != null) {
                 console.log("Fetching Background Music");
+                updateInstallerButtons(message.modId,`Installing music... (0%)`)
                 for (const fileURL of message.modLayers) {
                     let downloadURL = `${message.modContentUrl}/${fileURL}`
                     console.log('[GXM] Downloading',downloadURL);
@@ -233,6 +248,7 @@ async function onExtensionMessage(message, sender) {
     
                         if (result != null) {
                             downloadedLayers.push(result)
+                            updateInstallerButtons(message.modId,`Installing music... (${Math.round(((message.modLayers.indexOf(fileURL) + 1) / clamp(message.modLayers.length,1,Number.MAX_SAFE_INTEGER)) * 100)}%)`)
                         } else {
                             return {
                                 succeeded: false,
@@ -253,6 +269,15 @@ async function onExtensionMessage(message, sender) {
             let downloadedKeyboardSounds = {}
             if (message.modKeyboardSounds != null) {
                 console.log("Fetching Keyboard Sounds");
+                updateInstallerButtons(message.modId,`...and keyboard sounds... (0%)`)
+                let currentNumber = 0;
+                let maxNumber = 0;
+                for (const [soundCategory, soundsArray] of Object.entries(message.modKeyboardSounds)) {
+                    for (const fileURL of soundsArray) {
+                        maxNumber++
+                    }
+                }
+
                 for (const [soundCategory, soundsArray] of Object.entries(message.modKeyboardSounds)) {
                     console.log("fetching",soundCategory)
                     downloadedKeyboardSounds[soundCategory] = []
@@ -260,6 +285,7 @@ async function onExtensionMessage(message, sender) {
                         let downloadURL = `${message.modContentUrl}/${fileURL}`
                         if (fileURL != "") {
                             console.log('[GXM] Downloading',downloadURL);
+                            currentNumber++
                             try {
                                 let downloadedFile = await fetchRetry(downloadURL)
                                 console.log(downloadedFile);
@@ -274,6 +300,7 @@ async function onExtensionMessage(message, sender) {
             
                                 if (result != null) {
                                     downloadedKeyboardSounds[soundCategory].push(result)
+                                    updateInstallerButtons(message.modId,`...and keyboard sounds... (${Math.round((currentNumber / maxNumber) * 100)}%)`)
                                 } else {
                                     return {
                                         succeeded: false,
@@ -296,6 +323,15 @@ async function onExtensionMessage(message, sender) {
             let downloadedBrowserSounds = {}
             if (message.modBrowserSounds != null) {
                 console.log("Fetching Browser Sounds");
+                updateInstallerButtons(message.modId,`...and browser sounds. (0%)`)
+                let currentNumber = 0;
+                let maxNumber = 0;
+                for (const [soundCategory, soundsArray] of Object.entries(message.modBrowserSounds)) {
+                    for (const fileURL of soundsArray) {
+                        maxNumber++
+                    }
+                }
+
                 for (const [soundCategory, soundsArray] of Object.entries(message.modBrowserSounds)) {
                     console.log("fetching",soundCategory)
                     downloadedBrowserSounds[soundCategory] = []
@@ -303,6 +339,8 @@ async function onExtensionMessage(message, sender) {
                         let downloadURL = `${message.modContentUrl}/${fileURL}`
                         if (fileURL != "") {
                             console.log('[GXM] Downloading',downloadURL);
+                            currentNumber++
+                            
                             try {
                                 let downloadedFile = await fetchRetry(downloadURL)
                                 console.log(downloadedFile);
@@ -317,6 +355,7 @@ async function onExtensionMessage(message, sender) {
             
                                 if (result != null) {
                                     downloadedBrowserSounds[soundCategory].push(result)
+                                    updateInstallerButtons(message.modId,`...and browser sounds. (${Math.round((currentNumber / maxNumber) * 100)}%)`)
                                 } else {
                                     return {
                                         succeeded: false,
@@ -339,6 +378,7 @@ async function onExtensionMessage(message, sender) {
             console.log("Fetched everything!");
             if (downloadedLayers.length > 0 || (Object.keys(downloadedKeyboardSounds).length > 0) || (Object.keys(downloadedBrowserSounds).length > 0)) {
                 console.log("Attempting save...");
+                updateInstallerButtons(message.modId,`Finalizing...`)
                 try {
                     let previousData = await localforage.getItem(MOD_DATABASE_KEY);
                     if (previousData == null) {

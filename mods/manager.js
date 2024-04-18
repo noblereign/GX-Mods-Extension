@@ -387,7 +387,6 @@ async function verifyAndSaveMod(modId) {
                         return false
                     });
                 } catch (err) {
-                    // This code runs if there were any errors.
                     console.log(err);
                     errMessage.textContent = "Write error; check console for details!";
                     errMessage.classList.remove("hidden");
@@ -395,7 +394,6 @@ async function verifyAndSaveMod(modId) {
                 }
             }
         } catch (err) {
-            // This code runs if there were any errors.
             console.log(err);
             errMessage.textContent = "Read error; check console for details!";
             errMessage.classList.remove("hidden");

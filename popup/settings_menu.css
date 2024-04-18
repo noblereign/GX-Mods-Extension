@@ -135,19 +135,13 @@ hr.spacer {
 }
 
 .optionContainer, select {
-  width: 100%; /* Width of the outside container */
+  width: 100%;
 }
 
 select {
   margin-top: 4px;
   background-color: rgb(36, 32, 49);
   color: rgb(255, 255, 255);
-  /*background-image: url(arrow_down.svg);
-  background-origin: padding-box;
-  background-position-x: calc(100% - 10px);
-  background-position-y: calc(50% + 1px);
-  background-repeat-x: no-repeat;
-  background-repeat-y: no-repeat;*/
 
   -moz-appearance: none;
 	-webkit-appearance: none;
@@ -170,20 +164,18 @@ select:focus {
   box-shadow: 0 0 0 2px #51668E;
 }
 
-/* The slider itself */
 .slider {
   -webkit-appearance: none;  /* Override default CSS styles */
   appearance: none;
-  width: 85%; /* Full-width */
-  height: 4px; /* Specified height */
+  width: 85%;
+  height: 4px;
   background: #121019;
-  outline: none; /* Remove outline */
+  outline: none;
   border-radius: 4px;
 }
 
-/* Mouse-over effects */
 .slider:hover {
-  opacity: 1; /* Fully shown on mouse-over */
+  opacity: 1;
   cursor: pointer;
 }
 
@@ -197,7 +189,7 @@ select:focus {
   background-color: #8585a8; 
   height: 4px;
   border-radius: 4px;
-  -webkit-transition: .2s; /* 0.2 seconds transition on hover */
+  -webkit-transition: .2s;
   transition: background-color .2s;
 }
 
@@ -250,10 +242,7 @@ select:focus {
   margin-left: 4px;
 }
 
-
-
- /* The switch - the box around the slider */
- .switch {
+.switch {
   position: relative;
   display: inline-block;
   height: 20px;
@@ -265,14 +254,12 @@ select:focus {
   opacity: .25
 }
 
-/* Hide default HTML checkbox */
 .switch input {
   opacity: 0;
   width: 0;
   height: 0;
 }
 
-/* The slider */
 .toggleSwitch {
   position: absolute;
   cursor: pointer;
@@ -306,15 +293,10 @@ input:checked + .toggleSwitch {
   box-shadow: 0 0 0 2px #fa1e4e;
 }
 
-/*input:focus + .toggleSwitch {
-  box-shadow: 0 0 1px #2196F3;
-}*/
-
 input:checked + .toggleSwitch:before {
   transform: translateX(20px);
 }
 
-/* Rounded sliders */
 .toggleSwitch.round {
   border-radius: 34px;
 }
@@ -354,7 +336,7 @@ input:checked + .toggleSwitch:before {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
   font-size: 11px;
   font-weight: 400;
-  gap: .5em;/*0.33em;*/
+  gap: .5em;
   height: 32px;
   justify-content: center;
   outline: none;
@@ -371,11 +353,6 @@ input:checked + .toggleSwitch:before {
 .gxButton:active {
   background-image: linear-gradient(rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.06));
 }
-
-/*.gxButton:focus{
-  box-shadow: 0 0 0 3px rgb(150, 18, 47);
-  transition: box-shadow .3s;
-}*/
 
 #deleteModButton {
   gap: 0px;

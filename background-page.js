@@ -38,10 +38,10 @@ function playSound(bufferArray,gainNode) {
         }
         if ((Date.now() - lastPlayedType.get(bufferArray)) > 50) {
             let indexToPlay = getRandomInt(0,bufferArray.length-1)
-            var source = audioContext.createBufferSource();   // creates a sound source
-            source.buffer = bufferArray[indexToPlay];                     // tell the source which sound to play
-            source.connect(gainNode);                     // Connect the source to the gain node
-            source.start(0);                           // play the source at the deisred time 0=now    
+            var source = audioContext.createBufferSource();
+            source.buffer = bufferArray[indexToPlay];
+            source.connect(gainNode);
+            source.start(0);  
             lastPlayedType.set(bufferArray, Date.now())
         } else {
             console.log("[GXM] blocked a sound playing for the sake of your ears")
@@ -153,24 +153,6 @@ var sounds = [];
 var sourceNodes = [];
 var gainNodes = [];
 
-/*function getBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => {
-        let encoded = reader.result.toString().replace(/^data:(.*,)?/, '');
-        if ((encoded.length % 4) > 0) {
-            encoded += '='.repeat(4 - (encoded.length % 4));
-        }
-        resolve(encoded);
-        };
-        reader.onerror = error => reject(error);
-    });
-}*/
-// early on i used to use base64 to store the music because i didn't know you could just store blobs lol
-// it was a big mistake, you'd get up to like 6 mods and then the whole thing would collapse in on itself
-// thank god i figured out blobs, huh?
-
 function fetchRetry(url, options = {}, retries = 3, backoff = 300) {
     const retryCodes = [408, 500, 502, 503, 504, 522, 524];
     return fetch(url, options)
@@ -209,7 +191,6 @@ function updateInstallerButtons(modId,text) {
 }
 
 async function onExtensionMessage(message, sender) {
-    //console.log('[GXM] incoming message',message)
     if ((typeof message === 'object') && (message != null)) {
         if (message.intent == "getModState" && message.modId) {
             console.log('[GXM] getting mod state')
@@ -254,15 +235,6 @@ async function onExtensionMessage(message, sender) {
                     try {
                         let resultToSendBack = await localforage.setItem(MOD_DATABASE_KEY, previousData).then(function(value) {
                             console.log("Saved successfully")
-                            /*try {
-                                browser.runtime.sendMessage({
-                                    intent: "updateModLists",
-                                    newMod: message.modId
-                                })
-                            } catch (err) {
-                                console.log("couldn't update settings tabs");
-                                console.log(err);
-                            }*/
                             if (previousData[message.modId].layers) {
                                 try {
                                     let toSwapTo = previousData[message.modId].layers[0]
@@ -331,16 +303,13 @@ async function onExtensionMessage(message, sender) {
                         });
                         return resultToSendBack
                     } catch (err) {
-                        // This code runs if there were any errors.
                         console.log(err);
                         return {
                             succeeded: false,
                             error: "Failed to write to disk."
                         }
                     }
-
                 } catch (err) {
-                    // This code runs if there were any errors.
                     console.log(err);
                     return {
                         succeeded: false,
@@ -385,7 +354,7 @@ async function onExtensionMessage(message, sender) {
     } else if (message.startsWith('KeyboardvolumeChange=')) {
         var newVolume = message.replace("KeyboardvolumeChange=","")
         cachedSettings.keyboardVolume = Number(newVolume)
-    } else if (message.startsWith('spacedown')) { //im so sorry i tried to make this a switch case but it didnt work :'(
+    } else if (message.startsWith('spacedown')) {
         if (cachedSettings.sfxKeyboard) {
             KeyboardGainNode.gain.value = (cachedSettings.keyboardVolume/100);
             playSound(currentKeyboardSounds.TYPING_SPACE ? currentKeyboardSounds.TYPING_SPACE : [], KeyboardGainNode);
@@ -452,9 +421,6 @@ async function onExtensionMessage(message, sender) {
             .catch(function(err) {
                 console.warn("Something went wrong while checking focus!")
                 console.warn(err)
-                //console.warn("Falling back to sent visibility...")
-               // var isHidden = message.replace("visibility=","")
-               // mutedDueToFocus = (isHidden == "true")
             })
         },100);
     } else {
@@ -514,7 +480,6 @@ browser.runtime.onInstalled.addListener((details) => {
 });
 
 function pageLoadEvent(details) {
-    //console.log(`[GXM] page loaded: ${details.url}`);
     if (cachedSettings.muteShopping && (shoppingListCache == "")) {
         initShoppingMutes()
     }
@@ -528,7 +493,6 @@ browser.webNavigation.onCompleted.addListener(pageLoadEvent);
 
 function handleChanged(delta) {
     if (delta.state && delta.state.current === "complete") {
-         //console.log(`[GXM] download ${delta.id} has completed.`);
          if (cachedSettings.download) {
             level += 15;
             updateLevels()
@@ -541,19 +505,6 @@ browser.downloads.onChanged.addListener(handleChanged);
 checkTabAudible();
 setTimeout(checkTabAudible,10000);
 
-/* setInterval(async function() {
-    var tabs = await browser.tabs.query({currentWindow: true})
-    browser.tabs
-    .executeScript({
-        code: "document.hidden"
-    })
-    .then(results => {
-        console.log(results[0])
-    })
-    .catch(console.error);
-    console.log("Checked for focused tab")
-}, 200) */
-
 async function parse(file) {
     const reader = new FileReader();
     reader.readAsArrayBuffer(file);
@@ -563,12 +514,10 @@ async function parse(file) {
             resolve(reader.result)
         }
     })
-    //console.log(result)
     return result
 }
 
 function isIterable(obj) {
-    // checks for null and undefined
     if (obj == null) {
         return false;
     }
@@ -589,11 +538,7 @@ async function loadSounds(track) {
     
     await delay(500);
 
-    // audioContext.close()
-    // audioContext = null
     MasterGainNode = null
-
-    //audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
     MasterGainNode = audioContext.createGain();
     MasterGainNode.gain.value = (cachedSettings.volume/100);
@@ -622,7 +567,6 @@ async function loadSounds(track) {
         console.log(err);
     }
 
-    //thank you new style mods very cool
     const trackData = track.split("/");
     const trackName = trackData[0]
     const subTrack = trackData[1]
@@ -641,7 +585,6 @@ async function loadSounds(track) {
                 } else {
                     console.log("THE SUBTRACK DOESNT EXIST??? emptying layerdata to prevent the entire extension from combusting");
                     layerData = []
-                    // MY BADDDDD this is really confusing to work with 😭
                     browser.notifications.create({
                         type: "basic",
                         iconUrl: browser.runtime.getURL("icons/gxm_large_outline.png"),
@@ -656,8 +599,6 @@ async function loadSounds(track) {
         console.log(layerData)
         for (const blob of layerData){
             console.log("Loading mod layer");
-            //console.log(blob)
-            //console.log(blob.type)
 
             console.log("parsing")
             let arrayBuffer = await parse(blob)
@@ -669,7 +610,7 @@ async function loadSounds(track) {
                 sourceNode.loop = true;
                 
                 const gainNode = audioContext.createGain();
-                gainNode.gain.value = 0.0; // Adjust the volume as needed
+                gainNode.gain.value = 0.0;
                 
                 sourceNode.connect(gainNode);
                 gainNode.connect(MasterGainNode);
@@ -693,12 +634,11 @@ async function loadSounds(track) {
                 sourceNode.loop = true;
                 
                 const gainNode = audioContext.createGain();
-                gainNode.gain.value = 0.0; // Adjust the volume as needed
+                gainNode.gain.value = 0.0;
                 
                 sourceNode.connect(gainNode);
                 gainNode.connect(MasterGainNode);
-                
-                //const sound = new Audio(url);
+
                 sounds.push(soundBuffer);
                 sourceNodes.push(sourceNode);
                 gainNodes.push(gainNode);
@@ -711,7 +651,7 @@ async function loadSounds(track) {
     console.log("[GXM] All BGM sounds loaded.")
 
     modData = null;
-    const startTime = audioContext.currentTime + 0.1; // Delay the start if needed
+    const startTime = audioContext.currentTime + 0.1;
 
     browser.storage.local.get("trackName").then(
         function(result) {
@@ -774,8 +714,6 @@ async function loadKeyboardSounds(track) {
                 console.log("parsing",soundCategory)
                 currentKeyboardSounds[soundCategory] = []
                 for (const blob of soundsArray) {
-                    //console.log(blob)
-                    //console.log(blob.type)
                     let arrayBuffer = await parse(blob)
                     const soundBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
@@ -977,8 +915,6 @@ function fetchRetryText(url, options = {}, retries = 3, backoff = 300) {
 
 async function shouldShoppingMute(info) {
     try {
-        //console.log(typeof(info))
-        //console.log(info)
         let tabId = (typeof(info) == "number" ? info : info.tabId)
         let tabInfo = await browser.tabs.get(tabId);
         if (tabInfo.active) {
@@ -993,13 +929,11 @@ async function shouldShoppingMute(info) {
             }
             if (allowedToCheck) {
                 let currentURL = new URL(tabInfo.url)
-                //console.log(currentURL)
                 if (currentURL.host && (currentURL.host != "")) {
                     var regEx = new RegExp(`^${currentURL.host.replace(".","\.")}$`,"gm");
                     var regEx2 = new RegExp(`^${currentURL.host.replace("www.","").replace(".","\.")}$`,"gm");
                     let tryMatch1 = (shoppingListCache.match(regEx))
                     let tryMatch2 = (shoppingListCache.match(regEx2))
-                    //console.log(tryMatch1,tryMatch2,regEx,regEx2)
                     shoppingMute = (tryMatch1 != null || tryMatch2 != null)
                 } else {
                     shoppingMute = false

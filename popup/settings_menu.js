@@ -50,16 +50,6 @@ const keyboardSource = document.getElementById('keyboard-source')
 let moddedOptions = []
 
 async function updateModList() {
-    //while (modList.firstChild) {
-    //    modList.removeChild(modList.firstChild);
-    //}
-    //while (sfxModList.firstChild) {
-    //    sfxModList.removeChild(sfxModList.firstChild);
-    //}
-    //while (keyboardModList.firstChild) {
-    //    keyboardModList.removeChild(keyboardModList.firstChild);
-    //}
-    
     while (moddedOptions.length > 0) {
         let removed = moddedOptions.pop()
         removed.remove()
@@ -71,10 +61,6 @@ async function updateModList() {
             modData = {}
         }
         if (Object.keys(modData).length <= 0) {
-            //modList.setAttribute("disabled", "");
-            //sfxModList.setAttribute("disabled", "");
-            //keyboardModList.setAttribute("disabled", "");
-
             const noModsMessage = document.createElement("option");
             noModsMessage.label = "No mods installed... yet!　";
             noModsMessage.disabled = true;

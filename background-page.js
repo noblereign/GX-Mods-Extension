@@ -224,158 +224,14 @@ async function onExtensionMessage(message, sender) {
                 console.log(err);
                 return Promise.resolve(false);
             }
-        } else if (message.intent == "installMod" && message.modId && message.modContentUrl && message.modVersion ) {
+        } else if (message.intent == "buttonMessage" && message.modId && message.text) { 
+            updateInstallerButtons(message.modId,message.text)
+        } else if (message.intent == "installMod" && message.modId && message.modContentUrl && message.modVersion) {
             console.log('[GXM] Installing mod',message.modId);
-            let downloadedLayers = []
+            let downloadedLayers = message.modLayers
+            let downloadedKeyboardSounds = message.modKeyboardSounds
+            let downloadedBrowserSounds = message.modBrowserSounds
 
-            if (message.modLayers != null) {
-                console.log("Fetching Background Music");
-                updateInstallerButtons(message.modId,`Installing music... (0%)`)
-                for (const fileURL of message.modLayers) {
-                    let downloadURL = `${message.modContentUrl}/${fileURL}`
-                    console.log('[GXM] Downloading',downloadURL);
-                    try {
-                        let downloadedFile = await fetchRetry(downloadURL)
-                        console.log(downloadedFile);
-                        let result = null
-    
-                        try {
-                            let arrayBuffer = await downloadedFile.arrayBuffer()
-                            result = new Blob([arrayBuffer], {type: downloadedFile.type});
-                        } catch(error) {
-                            console.log(error);
-                        }
-    
-                        if (result != null) {
-                            downloadedLayers.push(result)
-                            updateInstallerButtons(message.modId,`Installing music... (${Math.round(((message.modLayers.indexOf(fileURL) + 1) / clamp(message.modLayers.length,1,Number.MAX_SAFE_INTEGER)) * 100)}%)`)
-                        } else {
-                            return {
-                                succeeded: false,
-                                error: "Failed to encode."
-                            }
-                        }
-                    } catch (err) {
-                        console.log("Download error");
-                        console.log(err);
-                        return {
-                            succeeded: false,
-                            error: "Failed to download."
-                        }
-                    }
-                }
-            }
-
-            let downloadedKeyboardSounds = {}
-            if (message.modKeyboardSounds != null) {
-                console.log("Fetching Keyboard Sounds");
-                updateInstallerButtons(message.modId,`...and keyboard sounds... (0%)`)
-                let currentNumber = 0;
-                let maxNumber = 0;
-                for (const [soundCategory, soundsArray] of Object.entries(message.modKeyboardSounds)) {
-                    for (const fileURL of soundsArray) {
-                        maxNumber++
-                    }
-                }
-
-                for (const [soundCategory, soundsArray] of Object.entries(message.modKeyboardSounds)) {
-                    console.log("fetching",soundCategory)
-                    downloadedKeyboardSounds[soundCategory] = []
-                    for (const fileURL of soundsArray) {
-                        let downloadURL = `${message.modContentUrl}/${fileURL}`
-                        if (fileURL != "") {
-                            console.log('[GXM] Downloading',downloadURL);
-                            currentNumber++
-                            try {
-                                let downloadedFile = await fetchRetry(downloadURL)
-                                console.log(downloadedFile);
-                                let result = null
-            
-                                try {
-                                    let arrayBuffer = await downloadedFile.arrayBuffer()
-                                    result = new Blob([arrayBuffer], {type: downloadedFile.type});
-                                } catch(error) {
-                                    console.log(error);
-                                }
-            
-                                if (result != null) {
-                                    downloadedKeyboardSounds[soundCategory].push(result)
-                                    updateInstallerButtons(message.modId,`...and keyboard sounds... (${Math.round((currentNumber / maxNumber) * 100)}%)`)
-                                } else {
-                                    return {
-                                        succeeded: false,
-                                        error: "Failed to encode."
-                                    }
-                                }
-                            } catch (err) {
-                                console.log("Download error");
-                                console.log(err);
-                                return {
-                                    succeeded: false,
-                                    error: "Failed to download."
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            let downloadedBrowserSounds = {}
-            if (message.modBrowserSounds != null) {
-                console.log("Fetching Browser Sounds");
-                updateInstallerButtons(message.modId,`...and browser sounds. (0%)`)
-                let currentNumber = 0;
-                let maxNumber = 0;
-                for (const [soundCategory, soundsArray] of Object.entries(message.modBrowserSounds)) {
-                    for (const fileURL of soundsArray) {
-                        maxNumber++
-                    }
-                }
-
-                for (const [soundCategory, soundsArray] of Object.entries(message.modBrowserSounds)) {
-                    console.log("fetching",soundCategory)
-                    downloadedBrowserSounds[soundCategory] = []
-                    for (const fileURL of soundsArray) {
-                        let downloadURL = `${message.modContentUrl}/${fileURL}`
-                        if (fileURL != "") {
-                            console.log('[GXM] Downloading',downloadURL);
-                            currentNumber++
-                            
-                            try {
-                                let downloadedFile = await fetchRetry(downloadURL)
-                                console.log(downloadedFile);
-                                let result = null
-            
-                                try {
-                                    let arrayBuffer = await downloadedFile.arrayBuffer()
-                                    result = new Blob([arrayBuffer], {type: downloadedFile.type});
-                                } catch(error) {
-                                    console.log(error);
-                                }
-            
-                                if (result != null) {
-                                    downloadedBrowserSounds[soundCategory].push(result)
-                                    updateInstallerButtons(message.modId,`...and browser sounds. (${Math.round((currentNumber / maxNumber) * 100)}%)`)
-                                } else {
-                                    return {
-                                        succeeded: false,
-                                        error: "Failed to encode."
-                                    }
-                                }
-                            } catch (err) {
-                                console.log("Download error");
-                                console.log(err);
-                                return {
-                                    succeeded: false,
-                                    error: "Failed to download."
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            console.log("Fetched everything!");
             if (downloadedLayers.length > 0 || (Object.keys(downloadedKeyboardSounds).length > 0) || (Object.keys(downloadedBrowserSounds).length > 0)) {
                 console.log("Attempting save...");
                 updateInstallerButtons(message.modId,`Finalizing...`)
@@ -409,10 +265,21 @@ async function onExtensionMessage(message, sender) {
                             }*/
                             if (previousData[message.modId].layers) {
                                 try {
-                                    browser.storage.local.set({
-                                        trackName: message.modId,
-                                    });
-                                    onExtensionMessage(`trackchange_${message.modId}`);
+                                    let toSwapTo = previousData[message.modId].layers[0]
+                                    if (toSwapTo.hasOwnProperty('id')) { // this is a new-style mod and has multiple entries
+                                        console.log("New format mod, switching to first track");
+                                        let toTrack = message.modId + `/${toSwapTo.id}`
+                                        browser.storage.local.set({
+                                            trackName: toTrack,
+                                        });
+                                        onExtensionMessage(`trackchange_${toTrack}`);
+                                    } else {
+                                        console.log("Classic format mod");
+                                        browser.storage.local.set({
+                                            trackName: message.modId,
+                                        });
+                                        onExtensionMessage(`trackchange_${message.modId}`);
+                                    }
                                 } catch (err) {
                                     console.log("couldn't auto swap music");
                                     console.log(err);
@@ -483,7 +350,7 @@ async function onExtensionMessage(message, sender) {
             } else {
                 return {
                     succeeded: false,
-                    error: "Conversion failed."
+                    error: "Transfer failed."
                 }
             }
         } else {
@@ -700,6 +567,14 @@ async function parse(file) {
     return result
 }
 
+function isIterable(obj) {
+    // checks for null and undefined
+    if (obj == null) {
+        return false;
+    }
+    return typeof obj[Symbol.iterator] === 'function';
+}
+
 async function loadSounds(track) {
     cTrack = track
     console.log("Attempting to load BGM",cTrack)
@@ -736,6 +611,7 @@ async function loadSounds(track) {
 
     if (track == 'off') return console.log("[GXM] Music is off");
 
+    
     let modData = {}
     try {
         modData = await localforage.getItem(MOD_DATABASE_KEY);
@@ -746,9 +622,38 @@ async function loadSounds(track) {
         console.log(err);
     }
 
-    if (modData[track]) {
+    //thank you new style mods very cool
+    const trackData = track.split("/");
+    const trackName = trackData[0]
+    const subTrack = trackData[1]
+
+    if (modData[trackName]) {
         console.log("[GXM] Loading modded track")
-        let layerData = modData[track].layers
+        let layerData = modData[trackName].layers
+        if (isIterable(layerData)) {
+            if ((layerData[0].hasOwnProperty('name'))) { // new format mod, try and find subtrack
+                console.log(`New format mod, trying to find subtrack ${subTrack}`);
+                var foundLayers = layerData.find(obj => {
+                    return obj.id === subTrack
+                })
+                if (foundLayers) {
+                    layerData = foundLayers.layers
+                } else {
+                    console.log("THE SUBTRACK DOESNT EXIST??? emptying layerdata to prevent the entire extension from combusting");
+                    layerData = []
+                    // MY BADDDDD this is really confusing to work with 😭
+                    browser.notifications.create({
+                        type: "basic",
+                        iconUrl: browser.runtime.getURL("icons/gxm_large_outline.png"),
+                        title: "Failed to load track...",
+                        message: `Couldn't find the music in the mod... this is likely a bug with new mod format, please report this on GXM's GitHub issues with the name of the mod used`,
+                    });
+                }
+            }
+        } else {
+            console.log(`Layerdata not iterable, assuming classic format mod`);
+        }
+        console.log(layerData)
         for (const blob of layerData){
             console.log("Loading mod layer");
             //console.log(blob)
@@ -779,7 +684,7 @@ async function loadSounds(track) {
     } else {
         console.log("[GXM] Loading built-in track")
         for (let i = 1; i < 7; i++) {
-            const url = `./music/${track}_${i}.mp3`;
+            const url = `./music/${trackName}_${i}.mp3`;
             console.log("Loading layer " + i);
             const soundBuffer = await loadAndDecodeAudio(url);
             if (soundBuffer) {

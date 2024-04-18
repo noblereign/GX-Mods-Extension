@@ -83,14 +83,17 @@
     <label for="track-picker">Track</label>
     <select id="track-picker">
       <option value="off">No music</option>
+      <hr />
       <optgroup label="Built-in">
-        <option value="town">Town</option>
-        <option value="journey">Journey</option>
       </optgroup>
-      <optgroup label="Mods" id="modListList" disabled>
+      <option value="town">Town</option>
+      <option value="journey">Journey</option>
+      <hr />
+      <optgroup label="Mods" id="modListList">
       </optgroup>
     </select>
-    <hr class="spacer">
+    <span class="sourceSubtitle" id="track-source">Built-in</span>
+    <br>
     <hr>
     <hr class="spacer">
     <span id="optionsTitle">Browser sounds</span>
@@ -157,12 +160,16 @@
     <label for="sfx-picker">Sound pack</label>
     <select id="sfx-picker">
       <option value="off">None</option>
+      <hr />
       <optgroup label="Built-in">
-        <option value="CC0">Commons</option>
       </optgroup>
-      <optgroup label="Mods" id="SFXmodListList" disabled>
+      <option value="CC0">Commons</option>
+      <hr />
+      <optgroup label="Mods" id="SFXmodListList">
       </optgroup>
     </select>
+    <span class="sourceSubtitle" id="sfx-source">Built-in</span>
+    <br>
     <hr class="spacer">
     <hr>
     <hr class="spacer">
@@ -189,12 +196,16 @@
     <label for="keyboard-picker">Sound pack</label>
     <select id="keyboard-picker">
       <option value="off">None</option>
+      <hr />
       <optgroup label="Built-in">
-        <option value="CC0">Commons</option>
       </optgroup>
-      <optgroup label="Mods" id="KeyboardmodListList" disabled>
+      <option value="CC0">Commons</option>
+      <hr />
+      <optgroup label="Mods">
       </optgroup>
     </select>
+    <span class="sourceSubtitle" id="keyboard-source">Built-in</span>
+    <br>
     <hr class="spacer">
 
     <div class="optionContainer buttonsContainer">

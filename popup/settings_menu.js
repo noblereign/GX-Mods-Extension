@@ -39,31 +39,56 @@ var KeyboardSelector = document.getElementById('keyboard-picker');
 
 const muteShoppingBox = document.getElementById('muteShopping');
 
-const modList = document.getElementById('modListList')
-const sfxModList = document.getElementById('SFXmodListList')
-const keyboardModList = document.getElementById('KeyboardmodListList')
+const modList = document.getElementById('track-picker')
+const sfxModList = document.getElementById('sfx-picker')
+const keyboardModList = document.getElementById('keyboard-picker')
 
+const trackSource = document.getElementById('track-source')
+const sfxSource = document.getElementById('sfx-source')
+const keyboardSource = document.getElementById('keyboard-source')
+
+let moddedOptions = []
 
 async function updateModList() {
-    while (modList.firstChild) {
-        modList.removeChild(modList.firstChild);
-    }
-    while (sfxModList.firstChild) {
-        sfxModList.removeChild(sfxModList.firstChild);
-    }
-    while (keyboardModList.firstChild) {
-        keyboardModList.removeChild(keyboardModList.firstChild);
-    }
+    //while (modList.firstChild) {
+    //    modList.removeChild(modList.firstChild);
+    //}
+    //while (sfxModList.firstChild) {
+    //    sfxModList.removeChild(sfxModList.firstChild);
+    //}
+    //while (keyboardModList.firstChild) {
+    //    keyboardModList.removeChild(keyboardModList.firstChild);
+    //}
     
+    while (moddedOptions.length > 0) {
+        let removed = moddedOptions.pop()
+        removed.remove()
+    }
+
     try {
         let modData = await localforage.getItem(MOD_DATABASE_KEY);
         if (modData == null) {
             modData = {}
         }
         if (Object.keys(modData).length <= 0) {
-            modList.setAttribute("disabled", "");
-            sfxModList.setAttribute("disabled", "");
-            keyboardModList.setAttribute("disabled", "");
+            //modList.setAttribute("disabled", "");
+            //sfxModList.setAttribute("disabled", "");
+            //keyboardModList.setAttribute("disabled", "");
+
+            const noModsMessage = document.createElement("option");
+            noModsMessage.label = "No mods installed... yet!　";
+            noModsMessage.disabled = true;
+            modList.appendChild(noModsMessage);
+
+            const noModsMessage2 = document.createElement("option");
+            noModsMessage2.label = "No mods installed... yet!　";
+            noModsMessage2.disabled = true;
+            sfxModList.appendChild(noModsMessage2);
+
+            const noModsMessage3 = document.createElement("option");
+            noModsMessage3.label = "No mods installed... yet!　";
+            noModsMessage3.disabled = true;
+            keyboardModList.appendChild(noModsMessage3);
         } else {
             let backgroundMusicEntries = 0
             let browserSoundEntries = 0
@@ -72,10 +97,26 @@ async function updateModList() {
             for (const [id, data] of Object.entries(modData)) {
                 if (data.layers) {
                     backgroundMusicEntries++
-                    const para = document.createElement("option");
-                    para.value = id;
-                    para.textContent = data.displayName;
-                    modList.appendChild(para);
+                    if (data.layers[0].hasOwnProperty('name')) { // New style mod with multiple options
+                        const modGroup = document.createElement("optgroup");
+                        modGroup.label = data.displayName;
+                        modList.appendChild(modGroup);
+
+                        for (const songData of data.layers) {
+                            const para = document.createElement("option");
+                            para.value = id + `/${songData.id}`;
+                            para.textContent = songData.name;
+                            para.setAttribute("data-author", songData.author);
+                            modGroup.appendChild(para);
+                        }
+                        moddedOptions.push(modGroup)
+                    } else {
+                        const para = document.createElement("option");
+                        para.value = id;
+                        para.textContent = data.displayName;
+                        modList.appendChild(para);
+                        moddedOptions.push(para)
+                    }
                 }
                 if (data.keyboardSounds) {
                     keyboardSoundEntries++
@@ -83,6 +124,7 @@ async function updateModList() {
                     para.value = id;
                     para.textContent = data.displayName;
                     keyboardModList.appendChild(para);
+                    moddedOptions.push(para)
                 }
                 if (data.browserSounds) {
                     browserSoundEntries++
@@ -90,17 +132,27 @@ async function updateModList() {
                     para.value = id;
                     para.textContent = data.displayName;
                     sfxModList.appendChild(para);
+                    moddedOptions.push(para)
                 }
             }
 
-            if (backgroundMusicEntries > 0) {
-                modList.removeAttribute("disabled");
+            if (backgroundMusicEntries <= 0) {
+                const noModsMessage = document.createElement("option");
+                noModsMessage.label = "No mods of this type are installed.";
+                noModsMessage.disabled = true;
+                modList.appendChild(noModsMessage);
             }
-            if (keyboardSoundEntries > 0) {
-                keyboardModList.removeAttribute("disabled");
+            if (keyboardSoundEntries <= 0) {
+                const noModsMessage3 = document.createElement("option");
+                noModsMessage3.label = "No mods of this type are installed.";
+                noModsMessage3.disabled = true;
+                keyboardModList.appendChild(noModsMessage3);
             }
-            if (browserSoundEntries > 0) {
-                sfxModList.removeAttribute("disabled");
+            if (browserSoundEntries <= 0) {
+                const noModsMessage2 = document.createElement("option");
+                noModsMessage2.label = "No mods of this type are installed.";
+                noModsMessage2.disabled = true;
+                sfxModList.appendChild(noModsMessage2);
             }
             backgroundMusicEntries = null;
             keyboardSoundEntries = null;
@@ -163,6 +215,18 @@ async function restoreOptions() {
         volumeSlider.value = result.volume || 50;
         volumePercentage.textContent = volumeSlider.value;
 
+        var selectedItem = trackSelector.selectedOptions[0]
+        if (typeof selectedItem !== 'undefined') {
+            if (selectedItem.getAttribute("data-author")) {
+                trackSource.textContent = selectedItem.getAttribute("data-author")
+                trackSource.classList.remove("hidden");
+            } else {
+                trackSource.classList.add("hidden");
+            }
+        } else {
+            trackSource.classList.add("hidden");
+        }
+        
         muteShoppingBox.checked = (typeof result.muteShopping == "undefined") ? false : result.muteShopping;
         // SOUND EFFECTS
         sfxSelector.value = result.sfxName || "off";
@@ -179,11 +243,34 @@ async function restoreOptions() {
         SFXlinksBox.checked = (typeof result.sfxLinks == "undefined") ? false : result.sfxLinks;
         SFXaltSwitchesBox.checked = (typeof result.sfxAltSwitch == "undefined") ? false : result.sfxAltSwitch;
 
+        var selectedItem = sfxSelector.selectedOptions[0]
+        if (typeof selectedItem !== 'undefined') {
+            if (selectedItem.getAttribute("data-author")) {
+                sfxSource.textContent = selectedItem.getAttribute("data-author")
+                sfxSource.classList.remove("hidden");
+            } else {
+                sfxSource.classList.add("hidden");
+            }
+        } else {
+            trackSource.classList.add("hidden");
+        }
 
         KeyboardSelector.value = result.keyboardName || "off";
         KeyboardVolumeSlider.value = result.keyboardVolume || 50;
 
         volumeKeyboardPercentage.textContent = KeyboardVolumeSlider.value;
+
+        var selectedItem = KeyboardSelector.selectedOptions[0]
+        if (typeof selectedItem !== 'undefined') {
+            if (selectedItem.getAttribute("data-author")) {
+                keyboardSource.textContent = selectedItem.getAttribute("data-author")
+                keyboardSource.classList.remove("hidden");
+            } else {
+                keyboardSource.classList.add("hidden");
+            }
+        } else {
+            trackSource.classList.add("hidden");
+        }
 
         loadingShimmer.setAttribute("disabled", "");
     }
@@ -205,6 +292,17 @@ trackSelector.addEventListener("change", function() {
     const selectedOption = trackSelector.value; // Get the selected value
     console.log("Selected option:", selectedOption);
     browser.runtime.sendMessage('trackchange_' + selectedOption)
+    var selectedItem = trackSelector.selectedOptions[0]
+    if (typeof selectedItem !== 'undefined') {
+        if (selectedItem.getAttribute("data-author")) {
+            trackSource.textContent = selectedItem.getAttribute("data-author")
+            trackSource.classList.remove("hidden");
+        } else {
+            trackSource.classList.add("hidden");
+        }
+    } else {
+        trackSource.classList.add("hidden");
+    }
     saveOptions()
 });
 
@@ -213,6 +311,17 @@ sfxSelector.addEventListener("change", function() {
     console.log("Selected sfx:", selectedOption);
     browser.runtime.sendMessage('sfxchange_' + selectedOption)
     saveOptions()
+    var selectedItem = sfxSelector.selectedOptions[0]
+    if (typeof selectedItem !== 'undefined') {
+        if (selectedItem.getAttribute("data-author")) {
+            sfxSource.textContent = selectedItem.getAttribute("data-author")
+            sfxSource.classList.remove("hidden");
+        } else {
+            sfxSource.classList.add("hidden");
+        }
+    } else {
+        trackSource.classList.add("hidden");
+    }
 });
 
 KeyboardSelector.addEventListener("change", function() {
@@ -220,6 +329,17 @@ KeyboardSelector.addEventListener("change", function() {
     console.log("Selected keyboard:", selectedOption);
     browser.runtime.sendMessage('keyboardchange_' + selectedOption)
     saveOptions()
+    var selectedItem = KeyboardSelector.selectedOptions[0]
+    if (typeof selectedItem !== 'undefined') {
+        if (selectedItem.getAttribute("data-author")) {
+            keyboardSource.textContent = selectedItem.getAttribute("data-author")
+            keyboardSource.classList.remove("hidden");
+        } else {
+            keyboardSource.classList.add("hidden");
+        }
+    } else {
+        trackSource.classList.add("hidden");
+    }
 });
 
 var volumePercentage = document.getElementById('volumePercentage');

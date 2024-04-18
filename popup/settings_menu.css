@@ -68,6 +68,11 @@ html, body {
   width: 95%;
 }
 
+.sourceSubtitle {
+  color: rgb(154, 160, 166);
+  /*margin-left: 1ch;*/
+  font-size: 12px;
+}
 
 .loadingOverlay[disabled] {
   opacity: 0;

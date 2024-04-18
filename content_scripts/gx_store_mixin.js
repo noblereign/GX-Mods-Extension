@@ -38,7 +38,7 @@ var timeout = 3000; // 3000ms = 3 seconds
 
 function fetchRetry(url, options = {}, retries = 3, backoff = 300) {
     const retryCodes = [408, 500, 502, 503, 504, 522, 524];
-    return fetch(url, options)
+    return content.fetch(url, options)
         .then(res => {
             if (res.ok) {
                 console.log("Fetch succeeded");
@@ -50,7 +50,29 @@ function fetchRetry(url, options = {}, retries = 3, backoff = 300) {
                     return fetchRetry(url, options, retries - 1, backoff * 2);
                 }, backoff);
             } else {
-                throw new Error(res);
+                console.log(res)
+                throw new Error("Failed to fetch file");
+            }
+        })
+        .catch(console.error);
+}
+
+function fetchRetryBlob(url, options = {}, retries = 3, backoff = 300) {
+    const retryCodes = [408, 500, 502, 503, 504, 522, 524];
+    return content.fetch(url, options)
+        .then(res => {
+            if (res.ok) {
+                console.log("Fetch succeeded");
+                return res.blob();
+            }
+
+            if (retries > 0 && retryCodes.includes(res.status)) {
+                setTimeout(() => {
+                    return fetchRetry(url, options, retries - 1, backoff * 2);
+                }, backoff);
+            } else {
+                console.log(res)
+                throw new Error("Failed to fetch file");
             }
         })
         .catch(console.error);
@@ -187,6 +209,235 @@ async function initHomeScript() {
 
 }
 
+function updateInstallerButtons(modId,text) {
+    browser.runtime.sendMessage({
+        intent: "buttonMessage",
+        modId: modId,
+        text: text
+    })
+}
+
+const clamp = (val, min, max) => Math.min(Math.max(val, min), max)
+
+async function installMod(message) {
+    console.log('[GXM] Installing mod',message.modId);
+
+    let downloadedLayers = []
+
+    if (message.modLayers != null) {
+        console.log("Fetching Background Music");
+        updateInstallerButtons(message.modId,`Installing music... (0%)`)
+        for (const fileURL of message.modLayers) {
+            if (fileURL.hasOwnProperty('name')) { // This is a new format mod (Multiple songs in one)
+                let currentDownloadedTrack = {
+                    id: fileURL.id,
+                    name: fileURL.name,
+                    author: fileURL.author,
+                    layers: []
+                }
+                for (const actualURL of fileURL.tracks) { // this isn't confusing at all :)
+                    let downloadURL = `${message.modContentUrl}/${actualURL}`
+                    console.log('[GXM] Downloading',downloadURL);
+                    try {
+                        let downloadedFile = await fetchRetryBlob(downloadURL)//, {referrer: `https://store.gx.me/mods/${message.modShortId}/${message.modMangledTitle}/`})
+                        console.log(downloadedFile);
+                        let result = null
+    
+                        try {
+                            let arrayBuffer = await downloadedFile.arrayBuffer()
+                            result = new Blob([arrayBuffer], {type: downloadedFile.type});
+                        } catch(error) {
+                            console.log(error);
+                        }
+    
+                        if (result != null) {
+                            currentDownloadedTrack.layers.push(result)
+                            updateInstallerButtons(message.modId,`Installing track ${Math.round(message.modLayers.indexOf(fileURL) + 1)}/${message.modLayers.length}... (${Math.round(((message.modLayers.indexOf(actualURL) + 1) / clamp(fileURL.tracks.length,1,Number.MAX_SAFE_INTEGER)) * 100)}%)`)
+                        } else {
+                            return {
+                                succeeded: false,
+                                error: `Failed to encode track ${Math.round(message.modLayers.indexOf(fileURL) + 1)}.`
+                            }
+                        }
+                    } catch (err) {
+                        console.log("Download error");
+                        console.log(err);
+                        return {
+                            succeeded: false,
+                            error: `Failed to download track ${Math.round(message.modLayers.indexOf(fileURL) + 1)}.`
+                        }
+                    }
+                }
+                downloadedLayers.push(currentDownloadedTrack)
+            } else { // Old style mod, just one track
+                let downloadURL = `${message.modContentUrl}/${fileURL}`
+                console.log('[GXM] Downloading',downloadURL);
+                try {
+                    let downloadedFile = await fetchRetryBlob(downloadURL)
+                    console.log(downloadedFile);
+                    let result = null
+
+                    try {
+                        let arrayBuffer = await downloadedFile.arrayBuffer()
+                        result = new Blob([arrayBuffer], {type: downloadedFile.type});
+                    } catch(error) {
+                        console.log(error);
+                    }
+
+                    if (result != null) {
+                        downloadedLayers.push(result)
+                        updateInstallerButtons(message.modId,`Installing music... (${Math.round(((message.modLayers.indexOf(fileURL) + 1) / clamp(message.modLayers.length,1,Number.MAX_SAFE_INTEGER)) * 100)}%)`)
+                    } else {
+                        return {
+                            succeeded: false,
+                            error: "Failed to encode."
+                        }
+                    }
+                } catch (err) {
+                    console.log("Download error");
+                    console.log(err);
+                    return {
+                        succeeded: false,
+                        error: "Failed to download."
+                    }
+                }
+            }
+        }
+    }
+
+    let downloadedKeyboardSounds = {}
+    if (message.modKeyboardSounds != null) {
+        console.log("Fetching Keyboard Sounds");
+        updateInstallerButtons(message.modId,`...and keyboard sounds... (0%)`)
+        let currentNumber = 0;
+        let maxNumber = 0;
+        for (const [soundCategory, soundsArray] of Object.entries(message.modKeyboardSounds)) {
+            for (const fileURL of soundsArray) {
+                maxNumber++
+            }
+        }
+
+        for (const [soundCategory, soundsArray] of Object.entries(message.modKeyboardSounds)) {
+            console.log("fetching",soundCategory)
+            downloadedKeyboardSounds[soundCategory] = []
+            for (const fileURL of soundsArray) {
+                let downloadURL = `${message.modContentUrl}/${fileURL}`
+                if (fileURL != "") {
+                    console.log('[GXM] Downloading',downloadURL);
+                    currentNumber++
+                    try {
+                        let downloadedFile = await fetchRetryBlob(downloadURL)
+                        console.log(downloadedFile);
+                        let result = null
+    
+                        try {
+                            let arrayBuffer = await downloadedFile.arrayBuffer()
+                            result = new Blob([arrayBuffer], {type: downloadedFile.type});
+                        } catch(error) {
+                            console.log(error);
+                        }
+    
+                        if (result != null) {
+                            downloadedKeyboardSounds[soundCategory].push(result)
+                            updateInstallerButtons(message.modId,`...and keyboard sounds... (${Math.round((currentNumber / maxNumber) * 100)}%)`)
+                        } else {
+                            return {
+                                succeeded: false,
+                                error: "Failed to encode."
+                            }
+                        }
+                    } catch (err) {
+                        console.log("Download error");
+                        console.log(err);
+                        return {
+                            succeeded: false,
+                            error: "Failed to download."
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    let downloadedBrowserSounds = {}
+    if (message.modBrowserSounds != null) {
+        console.log("Fetching Browser Sounds");
+        updateInstallerButtons(message.modId,`...and browser sounds. (0%)`)
+        let currentNumber = 0;
+        let maxNumber = 0;
+        for (const [soundCategory, soundsArray] of Object.entries(message.modBrowserSounds)) {
+            for (const fileURL of soundsArray) {
+                maxNumber++
+            }
+        }
+
+        for (const [soundCategory, soundsArray] of Object.entries(message.modBrowserSounds)) {
+            console.log("fetching",soundCategory)
+            downloadedBrowserSounds[soundCategory] = []
+            for (const fileURL of soundsArray) {
+                let downloadURL = `${message.modContentUrl}/${fileURL}`
+                if (fileURL != "") {
+                    console.log('[GXM] Downloading',downloadURL);
+                    currentNumber++
+                    
+                    try {
+                        let downloadedFile = await fetchRetryBlob(downloadURL)
+                        console.log(downloadedFile);
+                        let result = null
+    
+                        try {
+                            let arrayBuffer = await downloadedFile.arrayBuffer()
+                            result = new Blob([arrayBuffer], {type: downloadedFile.type});
+                        } catch(error) {
+                            console.log(error);
+                        }
+    
+                        if (result != null) {
+                            downloadedBrowserSounds[soundCategory].push(result)
+                            updateInstallerButtons(message.modId,`...and browser sounds. (${Math.round((currentNumber / maxNumber) * 100)}%)`)
+                        } else {
+                            return {
+                                succeeded: false,
+                                error: "Failed to encode."
+                            }
+                        }
+                    } catch (err) {
+                        console.log("Download error");
+                        console.log(err);
+                        return {
+                            succeeded: false,
+                            error: "Failed to download."
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    console.log("Fetched everything!");
+
+    if (downloadedLayers.length > 0 || (Object.keys(downloadedKeyboardSounds).length > 0) || (Object.keys(downloadedBrowserSounds).length > 0)) {
+        return await browser.runtime.sendMessage({
+            intent: "installMod",
+            modId: message.modId,
+            modContentUrl: message.modContentUrl,
+            modLayers: downloadedLayers,
+            modKeyboardSounds: downloadedKeyboardSounds,
+            modBrowserSounds: downloadedBrowserSounds,
+            modVersion: message.modVersion,
+            modDisplayName: message.modDisplayName,
+            modStorePage: message.modStorePage,
+            modMangledTitle: message.modMangledTitle,
+            modShortId: message.modShortId,
+        })
+    } else {
+        return {
+            succeeded: false,
+            error: "Conversion failed."
+        }
+    }
+}
+
 async function initContentScript() {
     let installModButton = null;
     async function searchForButton() {
@@ -285,7 +536,24 @@ async function initContentScript() {
                                     installModButton.setAttribute("disabled","")
                                     installModButton.textContent = "Installing..."
 
-                                    let installResult = await browser.runtime.sendMessage({
+                                    //insert "don't close the tab" warning
+                                    if (document.getElementById("gxm-warning") == null) {
+                                        installModButton.parentElement.insertAdjacentHTML("beforeend",`
+                                        <span class="text-[11px]" id="gxm-warning">
+                                            <p class="flex justify-center gap-1 pt-2">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="15" fill="none" class="text-primary-100"><path fill="currentColor" fill-rule="evenodd" d="M6.92.9c.702-1.2 2.458-1.2 3.16 0l6.673 11.4c.702 1.2-.176 2.7-1.58 2.7H1.827C.423 15-.455 13.5.248 12.3L6.92.9Zm2.107.6a.612.612 0 0 0-1.054 0L1.301 12.9a.6.6 0 0 0 .527.9h13.345a.6.6 0 0 0 .526-.9L9.027 1.5Z" clip-rule="evenodd"></path><path fill="currentColor" d="M7.689 5.573c0-.442.363-.8.811-.8.448 0 .811.358.811.8 0 .442-.363.8-.811.8a.806.806 0 0 1-.811-.8ZM8.189 7.356a.5.5 0 0 0-.5.5v3.917a.5.5 0 0 0 .5.5h.622a.5.5 0 0 0 .5-.5V7.856a.5.5 0 0 0-.5-.5h-.622Z"></path></svg>
+                                                <span id="gxm-warning-text">
+                                                    <b>Warning:</b> Don't close this tab until installation is complete.
+                                                </span>
+                                            </p>
+                                        </span>
+                                        `)
+                                    }
+                                    const dontCloseWarning = document.getElementById("gxm-warning");
+                                    const dontCloseText = document.getElementById("gxm-warning-text");
+                                    dontCloseText.innerHTML = "<b>Warning:</b> Don't close this tab until installation is complete."
+
+                                    let installResult = await installMod({
                                         intent: "installMod",
                                         modId: modInternalId,
                                         modContentUrl: baseURL,
@@ -294,14 +562,18 @@ async function initContentScript() {
                                         modBrowserSounds: browserArray,
                                         modVersion: modVersion,
                                         modDisplayName: modName,
-                                        modStorePage: modStorePage
+                                        modStorePage: modStorePage,
+                                        modMangledTitle: result.data.mangledTitle,
+                                        modShortId: result.data.modShortId,
                                     })
 
                                     console.log("Install result");
                                     console.log(installResult);
                                     if (installResult.succeeded) {
+                                        dontCloseWarning.remove()
                                         installModButton.textContent = "Reinstall"
                                     } else {
+                                        dontCloseText.innerHTML = `If the issue persists, you may want to <a class="text-neutral-77 transition-colors hover:text-neutral-100" href="https://github.com/noblereign/GX-Mods-Extension/issues/new/choose">report it to us</a>.`
                                         installModButton.textContent = installResult.error ? installResult.error : "Something went wrong."
                                     }
                                     installModButton.removeAttribute("disabled")

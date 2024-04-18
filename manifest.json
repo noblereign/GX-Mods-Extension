@@ -2,7 +2,7 @@
   "description": "Add ambient music, typing sounds, and more to your browsing experience.",
   "manifest_version": 2,
   "name": "GX Mods",
-  "version": "4.2.0",
+  "version": "5.0.0",
   "developer": {
     "name": "Noble (@frost@wolfdo.gg), Taylor (@tay@tech.lgbt)",
     "url": "https://github.com/noblereign/GX-Mods-Extension"
@@ -34,7 +34,7 @@
   ],
 
   "permissions": [
-    "activeTab", "tabs", "<all_urls>", "storage", "webNavigation", "downloads", "unlimitedStorage", "notifications"
+    "activeTab", "tabs", "<all_urls>", "storage", "webNavigation", "downloads", "unlimitedStorage", "notifications", "*://mods.store.gx.me/*"
   ], 
 
   "browser_action": {

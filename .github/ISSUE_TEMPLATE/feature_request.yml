@@ -1,0 +1,29 @@
+name: Feature request
+description: Request a new feature
+title: "[Feature]: "
+labels: [enhancement]
+assignees:
+  - 
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this feature request!
+
+  - type: textarea
+    id: feature
+    attributes:
+      label: What is the New feature?
+      description: "A description of what you want to see added! If it's related to a problem, be sure to write that down too."
+      placeholder: 
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Add any other context or screenshots about the feature request here.
+      placeholder: 
+    validations:
+      required: true

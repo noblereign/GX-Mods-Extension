@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.725">
   <link rel="stylesheet" href="settings_menu.css">
-  <title>GX Music Settings</title>
+  <title>GXM Settings</title>
   <link rel="icon" type="image/x-icon" href="../icons/beasts-32-light.png">
   <style>
     body {
@@ -15,6 +15,22 @@
 </head>
 
 <body>
+  <template id="webModTemplate">
+    <div class="optionContainer switchContainer webModOption">
+      <label class="webModLabel">
+        <span class="modName"></span>
+        <br>
+        <span class="sourceSubtitle"></span>
+      </label>
+      <label class="switch">
+          <input type="checkbox" class="webModCheckbox">
+          <span class="toggleSwitch round"></span>
+      </label>
+    </div>
+    <hr class="spacer">
+  </template>
+
+
   <div id="popup-content">
     <div class="loadingOverlay"></div>
     <div class="consentOverlay disabled">
@@ -206,8 +222,36 @@
     </select>
     <span class="sourceSubtitle" id="keyboard-source">Built-in</span>
     <br>
-    <hr class="spacer">
 
+    
+    <hr class="spacer">
+    <hr>
+    <hr class="spacer">
+    <span id="optionsTitle">Theming</span>
+    <hr>
+    <hr class="spacer">
+    <div id="knownWebMods">
+      <span class="sourceSubtitle" id="emptyWebMods">No web mods are active at the moment.</span>
+    </div>
+    <hr class="spacer">
+    <hr class="spacer">
+    <label for="theme-picker">Browser Theme</label>
+    <select id="theme-picker">
+      <option value="off">Firefox</option>
+      <hr />
+      <optgroup label="Mods" id="ThememodListList">
+      </optgroup>
+    </select>
+    <br>
+    <div class="optionContainer switchContainer">
+      <label for="lightTheme">Use light theme</label>
+      <label class="switch">
+        <input id="lightTheme" type="checkbox">
+        <span class="toggleSwitch round"></span>
+      </label>
+    </div>
+    <hr class="spacer">
+    
     <div class="optionContainer buttonsContainer">
       <!--<button class="gxButton" id="deleteModButton"><svg width="0" height="17" viewBox="0 0 0 17" fill="none" xmlns="http://www.w3.org/2000/svg"></svg>Delete</button>-->
       <button class="gxButton" id="createModButton"><svg width="18" height="17" viewBox="0 0 18 17" fill="none"
@@ -224,6 +268,7 @@
         </svg>Mods</button>
     </div>
   </div>
+  <script src="../accents_privileged.js"></script>
   <script src="../libs/localforage.min.js"></script>
   <script src="settings_menu.js"></script>
 </body>

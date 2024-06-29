@@ -1,6 +1,55 @@
+:root {
+	color-scheme: dark;
+	--gx-accent-l-8: 347deg 96% 4.4%;
+	--gx-accent-l-16: 347deg 96% 8.8%;
+	--gx-accent-l-24: 347deg 96% 13.2%;
+	--gx-accent-l-30: 347deg 96% 16.5%;
+	--gx-accent-l-60: 347deg 96% 33%;
+	--gx-accent-l-80: 347deg 96% 44%;
+	--gx-accent-l-100: 347deg 96% 55%;
+	--gx-accent-l-120: 347deg 96% 66%;
+	--gx-accent-l-140: 347deg 96% 77%;
+	--gx-accent-l-160: 347deg 96% 88%;
+	--gx-gray-10: 0deg 0% 10%;
+	--gx-gray-16: 0deg 0% 16%;
+	--gx-gray-20: 0deg 0% 20%;
+	--gx-gray-30: 0deg 0% 30%;
+	--gx-gray-40: 0deg 0% 40%;
+	--gx-gray-50: 0deg 0% 50%;
+	--gx-gray-60: 0deg 0% 60%;
+	--gx-gray-70: 0deg 0% 70%;
+	--gx-gray-80: 0deg 0% 80%;
+	--gx-gray-90: 0deg 0% 90%;
+	--gx-no-00: 258deg 24% 0%;
+	--gx-no-04: 258deg 24% 4%;
+	--gx-no-08: 258deg 24% 8%;
+	--gx-no-12: 258deg 24% 12%;
+	--gx-no-16: 258deg 24% 16%;
+	--gx-no-20: 258deg 24% 20%;
+	--gx-no-24: 258deg 24% 24%;
+	--gx-no-32: 258deg 24% 32%;
+	--gx-no-40: 258deg 24% 40%;
+	--gx-no-59: 258deg 24% 59%;
+	--gx-no-77: 258deg 24% 77%;
+	--gx-no-80: 258deg 24% 80%;
+	--gx-no-88: 258deg 24% 88%;
+	--gx-no-90: 258deg 24% 90%;
+	--gx-no-92: 258deg 24% 92%;
+	--gx-no-96: 258deg 24% 96%;
+	--gx-no-98: 258deg 24% 98%;
+	--gx-no-100: 258deg 24% 100%;
+	--gx-warning-red-l-100: 0deg 100% 50%;
+	--gx-warning-red-l-120: 0deg 100% 60%;
+	--gx-warning-red-l-140: 0deg 100% 70%;
+	--gx-warning-yellow-l-100: 47.88deg 100% 60%;
+	--gx-warning-yellow-l-120: 47.88deg 100% 72%;
+	--gx-warning-yellow-l-140: 47.88deg 100% 84%;
+	--gx-accent-100-contrast: 0 0 100%;
+}
+
 html, body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
-  background-color: rgb(18, 16, 25);
+  background-color: hsl(var(--gx-no-08));
   color: #ffffff;
   font-weight: 400;
   margin: 0px;
@@ -10,8 +59,8 @@ html, body {
   height: 64px;
   width: 100%;
   margin-bottom: 10vh;
-  background-color: rgb(27, 24, 37);
-  border-bottom: 1px solid rgb(72, 64, 99);
+  background-color: hsl(var(--gx-no-12));
+  border-bottom: 1px solid hsl(var(--gx-no-32));
   display: flex;
 }
 
@@ -76,14 +125,14 @@ hr {
   margin: 8px -8px 4px;
   border-top: 1px solid;
   border-bottom: none;
-  color: rgb(68, 68, 95);
+  color: hsl(var(--gx-no-32));
 }
 
 hr.spacer {
   margin: 4px 0px 2px;
   border-top: none;
   border-bottom: none;
-  color: rgb(68, 68, 95);
+  color: hsl(var(--gx-no-32));
 }
 
 .modListTitleContainer {
@@ -105,12 +154,12 @@ hr.spacer {
 }
 
 .card {
-  background-color: rgb(27, 24, 37);
+  background-color: hsl(var(--gx-no-12));
   border-radius: 5px;
   box-shadow: rgba(0, 0, 0, 0.25) 0px 10px 20px -8px;
   flex: 1;
   overflow: hidden;
-  border: solid 1px rgb(72, 64, 99);
+  border: solid 1px hsl(var(--gx-no-32));
   display: flex;
 	flex-direction: column;
 	justify-content: center;
@@ -125,7 +174,7 @@ ul {
 
 .emptyState {
   display: block;
-  color: rgb(154, 160, 166);
+  color: hsl(var(--gx-no-59));
   text-align: center;
   margin:auto;
 }
@@ -143,7 +192,7 @@ li:not(:last-child) {
 }
 
 .sourceSubtitle {
-  color: rgb(154, 160, 166);
+  color: hsl(var(--gx-no-59));
   font-size: 12px;
 }
 
@@ -165,7 +214,7 @@ li:not(:last-child) {
 
 select {
   margin-top: 4px;
-  background-color: rgb(36, 32, 49);
+  background-color: hsl(var(--gx-no-16));
   color: rgb(255, 255, 255);
 
   -moz-appearance: none;
@@ -219,7 +268,7 @@ select:focus {
 }
 
 .slider:hover::-moz-range-progress {
-  background-color: #fa1e4e; 
+  background-color: hsl(var(--gx-no-12)); 
 }
 
 .volumeIcon {
@@ -228,15 +277,15 @@ select:focus {
     mask-image: url(volume.svg);
     mask-repeat: no-repeat;
     mask-position: center;
-    background-color: rgb(189, 184, 209);
+    background-color: hsl(var(--gx-no-92));
     margin-right: 4px;
 }
 
 #volumeContainer {
   margin-top: 4px;
-  background-color: rgb(34, 34, 48);
+  background-color: hsl(var(--gx-no-16));
   padding: 4px 8px 4px 4px;
-  border: 1px solid rgb(68, 68, 95);
+  border: 1px solid hsl(var(--gx-no-32));
   border-radius: 2px;
 
   display: flex;
@@ -270,9 +319,9 @@ select:focus {
 .toggleSwitch {
   position: absolute;
   cursor: pointer;
-  background-color: rgb(25, 25, 36);
+  background-color: hsl(var(--gx-no-12));
   border-radius: 10px;
-  box-shadow: 0 0 0 1px rgb(68, 68, 95);
+  box-shadow: 0 0 0 1px hsl(var(--gx-no-32));
   height: 20px;
   width: 40px;
   left: 3px;
@@ -291,13 +340,13 @@ select:focus {
   width: 16px;
   left: 2px;
   top: 2px;
-  background-color: rgb(186, 186, 206);
+  background-color: hsl(var(--gx-no-77));
   transition: transform .2s cubic-bezier(.25,.15,.29,1.51);
 }
 
 input:checked + .toggleSwitch {
-  background-color: rgb(80, 23, 43);
-  box-shadow: 0 0 0 2px #fa1e4e;
+  background-color: hsl(var(--gx-accent-l-30)); /*lightness is 20% usually so??*/
+  box-shadow: 0 0 0 2px hsl(var(--gx-accent-l-100));
 }
 
 input:checked + .toggleSwitch:before {
@@ -341,15 +390,17 @@ body > .buttonsContainer {
 
 .gxButton {
   align-items: center;
-  background-color: rgb(36, 32, 49);
-  border: 1px solid rgb(72, 64, 99);
+  /*background-color: rgb(36, 32, 49);
+  border: 1px solid rgb(72, 64, 99);*/
+  background-color: hsl(var(--gx-no-16));
+  border: 1px solid hsl(var(--gx-no-32));
   border-radius: 3px;
   color: rgb(255, 255, 255);
   display: inline-flex;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
   font-size: 11px;
   font-weight: 400;
-  gap: .5em;
+  gap: .5em;/*0.33em;*/
   height: 32px;
   justify-content: center;
   outline: none;
@@ -365,7 +416,7 @@ body > .buttonsContainer {
 }
 
 .gxButton:not(:disabled):hover {
-  background-color: rgb(45, 40, 62);
+  background-color: hsl(var(--gx-no-20));
 }
 
 .gxButton:not(:disabled):active {
@@ -390,14 +441,29 @@ body > .buttonsContainer {
   font-size: 11px;
   cursor: pointer;
   gap: 0px;
-  background-color: rgb(250, 30, 78);
-  border-color: rgb(250, 30, 78);
+  background-color: hsl(var(--gx-accent-l-80));
+  border-color: hsl(var(--gx-accent-l-60));
+  color: hsl(var(--gx-accent-100-contrast));
+  font-weight: 700;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   -khtml-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+}
+
+#goToStore:disabled {
+  cursor: not-allowed;
+  opacity: .4;
+}
+
+#goToStore:not(:disabled):hover {
+  background-image: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1));
+}
+
+#goToStore:not(:disabled):active {
+  background-image: linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.2));
 }
 
 .goToStoreButton {
@@ -410,8 +476,8 @@ body > .buttonsContainer {
   cursor: pointer;
   gap: 0px;
   align-items: center;
-  background-color: rgb(36, 32, 49);
-  border: 1px solid rgb(72, 64, 99);
+  background-color: hsl(var(--gx-no-16));
+  border: 1px solid hsl(var(--gx-no-32));
   border-radius: 3px;
   color: rgb(255, 255, 255);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
@@ -430,13 +496,22 @@ body > .buttonsContainer {
 #finish {
   gap: 0px;
   width: 78px;
-  background-color: rgb(250, 30, 78);
-  border-color: rgb(150, 18, 47)
+  background-color: hsl(var(--gx-accent-l-80));
+  border-color: hsl(var(--gx-accent-l-60));
+  color: hsl(var(--gx-accent-100-contrast));
+  font-weight: 700;
 }
 #finish:disabled {
   cursor: not-allowed;
   opacity: .4;
 }
+#finish:not(:disabled):hover {
+  background-image: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1));
+}
+#finish:not(:disabled):active {
+  background-image: linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.2));
+}
+
 
 .modal {
   position: fixed; /* Stay in place */
@@ -448,11 +523,12 @@ body > .buttonsContainer {
   overflow: auto; /* Enable scroll if needed */
   background-color: rgb(0,0,0); /* Fallback color */
   background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+  border: 1px solid hsl(var(--gx-no-24));
 }
 
 /* Modal Content/Box */
 .modalContent {
-  background-color: rgb(41, 42, 45);
+  background-color: hsl(var(--gx-no-12)); /*might be gray?*/
   margin: 15% auto; /* 15% from the top and centered */
   padding: 20px;
   border: none;
@@ -477,14 +553,14 @@ body > .buttonsContainer {
   margin-bottom: 12px;
   border-top: 1px solid;
   border-bottom: none;
-  color: rgb(63, 64, 66);
+  color: hsl(var(--gx-no-24));
 }
 
 .modalContainer > hr.spacer {
   margin: 8px 0px 8px;
   border-top: none;
   border-bottom: none;
-  color: rgb(68, 68, 95);
+  color: hsl(var(--gx-no-32));
 }
 
 .modItem > .buttonsContainer {
@@ -513,7 +589,7 @@ body > .buttonsContainer {
 }
 
 .subtitle {
-  color: rgb(154, 160, 166);
+  color: hsl(var(--gx-gray-60));
   font-size: 12px;
 }
 
@@ -546,7 +622,7 @@ body > .buttonsContainer {
 }
 
 label[for="modname"] {
-  color: rgb(154, 160, 166);
+  color: hsl(var(--gx-gray-60));
   display: block;
   font-size: 14px;
   font-weight: 600;
@@ -556,12 +632,12 @@ label[for="modname"] {
 }
 
 label[for="modname"]:focus-within {
-  color: rgb(250, 30, 78);
+  color: hsl(var(--gx-accent-l-100));
   font-weight: 400;
 }
 
 .titleMsg {
-  color: rgb(154, 160, 166);
+  color: hsl(var(--gx-gray-60));
   display: block;
   font-size: 14px;
   font-weight: 600;
@@ -575,14 +651,14 @@ label[for="modname"]:focus-within {
 input[type="text"] {
   display: block;
   width: 95%;
-  background-color: rgb(36, 32, 49);
-  border: 1px solid rgb(72, 64, 99);
+  background-color: hsl(var(--gx-no-16));
+  border: 1px solid hsl(var(--gx-no-32));
   border-radius: 3px;
-  color: rgb(255, 255, 255);
+  color: rgb(255, 255, 255); /*TODO: does this need accent?*/
   font-size: 13px;
   height: 18px;
   padding: 6px 12px;
-  caret-color: rgb(250, 30, 78);
+  caret-color: hsl(var(--gx-accent-l-100));
   outline-color: rgb(255, 255, 255);
   margin-top: 8px;
   -moz-appearance: none;
@@ -596,8 +672,8 @@ input[type="text"]:focus {
 }
 
 input[type="text"]::-moz-selection {
-  background: rgb(250, 30, 78); /* Gecko Browsers */
-  color: #FFFFFF;
+  background: hsl(var(--gx-accent-l-100)); /* Gecko Browsers */
+  color: hsl(var(--gx-accent-100-contrast));
 }
 
 input[type="file"] {
@@ -618,12 +694,12 @@ ol {
 
 .preview li:not(:last-child) {
 	margin-bottom: 12px;
-	border-bottom: 1px solid rgb(63, 64, 66);
+	border-bottom: 1px solid hsl(var(--gx-no-24));
 }
 
 /*fucked up sfx preview css im so sorry*/
 .sfxPreview li:not(:last-child) {
-	border-bottom: 1px solid rgb(63, 64, 66);
+	border-bottom: 1px solid hsl(var(--gx-no-24));
 }
 .sfxPreview li:last-child {
   margin: 0px -20px -5px -20px;
@@ -653,7 +729,7 @@ ol {
   justify-content: space-between;
 }
 .sfxLength {
-  color: rgb(154, 160, 166);
+  color: hsl(var(--gx-gray-60));
   text-align: center;
   width: 32px;
   padding-right: 8px;
@@ -683,8 +759,8 @@ li.sfxPreviewItem {
 
 #filesButton, #sfxFilesButton {
   align-items: center;
-  background-color: rgb(36, 32, 49);
-  border: 1px solid rgb(72, 64, 99);
+  background-color: hsl(var(--gx-no-16));
+  border: 1px solid hsl(var(--gx-no-32));
   border-radius: 3px;
   color: rgb(255, 255, 255);
   display: inline-flex;
@@ -704,7 +780,7 @@ li.sfxPreviewItem {
 }
 
 #filesButton:hover, #sfxFilesButton:hover {
-  background-color: rgb(45, 40, 62);
+  background-color: hsl(var(--gx-no-20));
 }
 
 #filesButton:active, #sfxFilesButton:active {

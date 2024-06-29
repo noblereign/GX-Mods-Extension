@@ -28,8 +28,6 @@
  
  **If you enable "Mute while shopping", [a list of shopping websites](https://cdn.jsdelivr.net/gh/corbindavenport/shop-list/list.txt) will be downloaded from jsdelivr.**
  
- However, you probably won't need to toggle it on unless you're using the [Wii Shop Channel](https://addons.mozilla.org/en-US/firefox/addon/wii-shop-channel/) extension alongside GXM.
- 
  If you don't want to ping jsdelivr, don't flip that toggle! ^^;
 
 # Required Permissions

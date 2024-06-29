@@ -1,8 +1,57 @@
+:root {
+	color-scheme: dark;
+	--gx-accent-l-8: 347deg 96% 4.4%;
+	--gx-accent-l-16: 347deg 96% 8.8%;
+	--gx-accent-l-24: 347deg 96% 13.2%;
+	--gx-accent-l-30: 347deg 96% 16.5%;
+	--gx-accent-l-60: 347deg 96% 33%;
+	--gx-accent-l-80: 347deg 96% 44%;
+	--gx-accent-l-100: 347deg 96% 55%;
+	--gx-accent-l-120: 347deg 96% 66%;
+	--gx-accent-l-140: 347deg 96% 77%;
+	--gx-accent-l-160: 347deg 96% 88%;
+	--gx-gray-10: 0deg 0% 10%;
+	--gx-gray-16: 0deg 0% 16%;
+	--gx-gray-20: 0deg 0% 20%;
+	--gx-gray-30: 0deg 0% 30%;
+	--gx-gray-40: 0deg 0% 40%;
+	--gx-gray-50: 0deg 0% 50%;
+	--gx-gray-60: 0deg 0% 60%;
+	--gx-gray-70: 0deg 0% 70%;
+	--gx-gray-80: 0deg 0% 80%;
+	--gx-gray-90: 0deg 0% 90%;
+	--gx-no-00: 258deg 24% 0%;
+	--gx-no-04: 258deg 24% 4%;
+	--gx-no-08: 258deg 24% 8%;
+	--gx-no-12: 258deg 24% 12%;
+	--gx-no-16: 258deg 24% 16%;
+	--gx-no-20: 258deg 24% 20%;
+	--gx-no-24: 258deg 24% 24%;
+	--gx-no-32: 258deg 24% 32%;
+	--gx-no-40: 258deg 24% 40%;
+	--gx-no-59: 258deg 24% 59%;
+	--gx-no-77: 258deg 24% 77%;
+	--gx-no-80: 258deg 24% 80%;
+	--gx-no-88: 258deg 24% 88%;
+	--gx-no-90: 258deg 24% 90%;
+	--gx-no-92: 258deg 24% 92%;
+	--gx-no-96: 258deg 24% 96%;
+	--gx-no-98: 258deg 24% 98%;
+	--gx-no-100: 258deg 24% 100%;
+	--gx-warning-red-l-100: 0deg 100% 50%;
+	--gx-warning-red-l-120: 0deg 100% 60%;
+	--gx-warning-red-l-140: 0deg 100% 70%;
+	--gx-warning-yellow-l-100: 47.88deg 100% 60%;
+	--gx-warning-yellow-l-120: 47.88deg 100% 72%;
+	--gx-warning-yellow-l-140: 47.88deg 100% 84%;
+	--gx-accent-100-contrast: 0 0 100%;
+}
+
 html, body {
   width: calc(220px + var(--scrollbar-width));
   padding-right: var(--scrollbar-width);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
-  background-color: rgb(28, 23, 38);
+  background-color: hsl(var(--gx-no-12));
   color: #ffffff;
   font-weight: 400
 }
@@ -13,7 +62,7 @@ html, body {
   bottom:0;
   left:0;
   right:0;
-  background-color:rgb(17, 14, 24);
+  background-color:hsl(var(--gx-no-08));
   opacity:1;
   z-index:1001;
   transition: opacity 0.3s, background-color 0.3s;
@@ -43,8 +92,9 @@ html, body {
 }
 
 .importantButton {
-  background-color: rgb(250, 30, 78) !important;
-  border-color: rgb(250, 30, 78) !important;
+  background-color: hsl(var(--gx-accent-l-100)) !important;
+  border-color: hsl(var(--gx-accent-l-120)) !important;
+  color: hsl(var(--gx-accent-100-contrast)) !important;
 }
 
 .buttonsContainer {
@@ -68,8 +118,16 @@ html, body {
   width: 95%;
 }
 
+.webModLabel {
+  line-height: 1.1em;
+}
+
+.modName {
+  margin-bottom: -8px !important;
+}
+
 .sourceSubtitle {
-  color: rgb(154, 160, 166);
+  color: hsl(var(--gx-no-59));
   /*margin-left: 1ch;*/
   font-size: 12px;
 }
@@ -77,8 +135,9 @@ html, body {
 .loadingOverlay[disabled] {
   opacity: 0;
   pointer-events: none;
-  background-color: rgb(32, 27, 44);
+  background-color: hsl(var(--gx-no-12));
 }
+
 .consentOverlay[enabled] {
   opacity: 1;
   pointer-events: all;
@@ -96,14 +155,14 @@ hr {
   margin: 8px -8px 4px;
   border-top: 1px solid;
   border-bottom: none;
-  color: rgb(68, 68, 95);
+  color: hsl(var(--gx-no-32));
 }
 
 hr.spacer {
   margin: 4px 0px 2px;
   border-top: none;
   border-bottom: none;
-  color: rgb(68, 68, 95);
+  color: hsl(var(--gx-no-32));
 }
 
 .hidden {
@@ -118,30 +177,14 @@ hr.spacer {
   cursor: pointer;
 }
 
-.beast:hover {
-  background-color: #CFF2F2;
-}
-
-.beast {
-  background-color: #E5F2F2;
-}
-
-.reset {
-  background-color: #FBFBC9;
-}
-
-.reset:hover {
-  background-color: #EAEA9D;
-}
-
 .optionContainer, select {
   width: 100%;
 }
 
 select {
   margin-top: 4px;
-  background-color: rgb(36, 32, 49);
-  color: rgb(255, 255, 255);
+  background-color: hsl(var(--gx-no-16));
+  color: hsl(var(--gx-no-100));
 
   -moz-appearance: none;
 	-webkit-appearance: none;
@@ -161,7 +204,7 @@ select {
 }
 
 select:focus {
-  box-shadow: 0 0 0 2px #51668E;
+  box-shadow: 0 0 0 2px hsl(var(--gx-accent-l-80));
 }
 
 .slider {
@@ -169,7 +212,7 @@ select:focus {
   appearance: none;
   width: 85%;
   height: 4px;
-  background: #121019;
+  background: hsl(var(--gx-no-08));
   outline: none;
   border-radius: 4px;
 }
@@ -180,13 +223,13 @@ select:focus {
 }
 
 .slider::-moz-range-thumb {
-  background: #bfb6d2;
+  background: hsl(var(--gx-no-77));
   height: 8px;
   width: 8px;
 }
 
 .slider::-moz-range-progress {
-  background-color: #8585a8; 
+  background-color: hsl(var(--gx-no-59)); 
   height: 4px;
   border-radius: 4px;
   -webkit-transition: .2s;
@@ -194,7 +237,7 @@ select:focus {
 }
 
 .slider:hover::-moz-range-progress {
-  background-color: #fa1e4e; 
+  background-color: hsl(var(--gx-accent-l-100)); 
 }
 
 .volumeIcon {
@@ -203,15 +246,15 @@ select:focus {
     mask-image: url(volume.svg);
     mask-repeat: no-repeat;
     mask-position: center;
-    background-color: rgb(189, 184, 209);
+    background-color: hsl(var(--gx-no-77));
     margin-right: 4px;
 }
 
 #volumeContainer {
   margin-top: 4px;
-  background-color: rgb(34, 34, 48);
+  background-color: hsl(var(--gx-no-16));
   padding: 4px 8px 4px 4px;
-  border: 1px solid rgb(68, 68, 95);
+  border: 1px solid hsl(var(--gx-no-32));
   border-radius: 2px;
 
   display: flex;
@@ -263,9 +306,9 @@ select:focus {
 .toggleSwitch {
   position: absolute;
   cursor: pointer;
-  background-color: rgb(25, 25, 36);
+  background-color: hsl(var(--gx-no-12));
   border-radius: 10px;
-  box-shadow: 0 0 0 1px rgb(68, 68, 95);
+  box-shadow: 0 0 0 1px hsl(var(--gx-no-32));
   height: 20px;
   width: 40px;
   left: 3px;
@@ -284,13 +327,14 @@ select:focus {
   width: 16px;
   left: 2px;
   top: 2px;
-  background-color: rgb(186, 186, 206);
+  background-color: hsl(var(--gx-no-77));
   transition: transform .2s cubic-bezier(.25,.15,.29,1.51);
 }
 
 input:checked + .toggleSwitch {
-  background-color: rgb(80, 23, 43);
-  box-shadow: 0 0 0 2px #fa1e4e;
+  background-color: hsl(var(--gx-accent-l-30));
+  background-color: hsl(var(--gx-accent-l-60) / 50%);
+  box-shadow: 0 0 0 2px hsl(var(--gx-accent-l-100));
 }
 
 input:checked + .toggleSwitch:before {
@@ -328,8 +372,8 @@ input:checked + .toggleSwitch:before {
 
 .gxButton {
   align-items: center;
-  background-color: rgb(36, 32, 49);
-  border: 1px solid rgb(72, 64, 99);
+  background-color: hsl(var(--gx-no-16));
+  border: 1px solid hsl(var(--gx-no-32));
   border-radius: 3px;
   color: rgb(255, 255, 255);
   display: inline-flex;
@@ -346,15 +390,20 @@ input:checked + .toggleSwitch:before {
   cursor: pointer;
 }
 
-.gxButton:hover {
-  background-color: rgb(45, 40, 62);
+
+.gxButton:disabled {
+  cursor: not-allowed;
+  opacity: .4;
 }
 
-.gxButton:active {
+.gxButton:not(:disabled):hover {
+  background-color: hsl(var(--gx-no-20));
+}
+
+.gxButton:not(:disabled):active {
   background-image: linear-gradient(rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.06));
 }
 
-#deleteModButton {
-  gap: 0px;
-  width: 78px;
+.gxButton:disabled {
+  cursor: not-allowed;
 }

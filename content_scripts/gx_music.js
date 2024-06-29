@@ -1,3 +1,7 @@
+browser.runtime.sendMessage({
+  intent: "tryWebMods",
+})
+
 function sendKeyboardCommand(event) {
   if (!event.repeat) {
     if (!(event.code.startsWith("Arrow"))) {

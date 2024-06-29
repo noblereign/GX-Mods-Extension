@@ -165,6 +165,18 @@ async function updateModList() {
                     para.classList.add("chip");
                     chipBag.appendChild(para);
                 }
+                if (data.webMods) {
+                    const para = document.createElement("span");
+                    para.textContent = "Web modding";
+                    para.classList.add("chip");
+                    chipBag.appendChild(para);
+                }
+                if (data.theme) {
+                    const para = document.createElement("span");
+                    para.textContent = "Theme";
+                    para.classList.add("chip");
+                    chipBag.appendChild(para);
+                }
 
                 let deleteButton = newModItem.querySelector(".deleteModButton")
                 deleteButton.onclick = function () {
@@ -183,12 +195,25 @@ async function updateModList() {
 }
 
 async function deleteMod(modName) {
+    let needsRefresh = false
     try {
         let previousData = await localforage.getItem(MOD_DATABASE_KEY);
         if (previousData == null) {
             previousData = {}
         }
         if (previousData[modName]) {
+            if (previousData[modName].webMods) {
+                needsRefresh = true;
+                for (const [webModIndex, webModData] of Object.entries(previousData[modName].webMods)) {
+                    await browser.runtime.sendMessage({
+                        intent: "webModState",
+                        modId: modName,
+                        index: webModIndex,
+                        state: false
+                    })
+                }
+            }
+
             delete previousData[modName];
 
             browser.storage.local.get().then(
@@ -200,23 +225,6 @@ async function deleteMod(modName) {
                             }).then(
                                 function(result) {
                                     browser.runtime.sendMessage(`trackchange_off`);
-                                    try {
-                                        localforage.setItem(MOD_DATABASE_KEY, previousData).then(function(value) {
-                                            console.log("Deleted successfully")
-                                            updateModList()
-                                            return true
-                                        }).catch(function(err) {
-                                            console.log("Write error");
-                                            console.log(err);
-                                            alert("Couldn't delete mod due to a disk error. Please try again!")
-                                            return false
-                                        });
-                                    } catch (err) {
-                                        console.log("Write error");
-                                        console.log(err);
-                                        alert("Couldn't delete mod due to a disk error. Please try again!")
-                                        return false
-                                    }
                                 },
                                 function(error) {
                                     console.log("promise failed");
@@ -231,20 +239,71 @@ async function deleteMod(modName) {
                             alert("Couldn't delete mod due to a disk error. Please try again!")
                             return false
                         }
-                    } else {
+                    }
+
+                    if (result.keyboardName == modName) {
                         try {
-                            localforage.setItem(MOD_DATABASE_KEY, previousData).then(function(value) {
-                                console.log("Deleted successfully")
-                                updateModList()
-                                return true
-                            }).catch(function(err) {
-                                console.log("Write error");
-                                console.log(err);
-                                alert("Couldn't delete mod due to a disk error. Please try again!")
-                                return false
-                            });
+                            browser.storage.local.set({
+                                keyboardName: "off",
+                            }).then(
+                                function(result) {
+                                    browser.runtime.sendMessage(`keyboardchange_off`);
+                                },
+                                function(error) {
+                                    console.log("promise failed");
+                                    console.log(error);
+                                    alert("Couldn't delete mod due to a disk error. Please try again!")
+                                    return false
+                                }
+                            );
                         } catch (err) {
-                            console.log("Write error");
+                            console.log("couldn't auto swap keyboard");
+                            console.log(err);
+                            alert("Couldn't delete mod due to a disk error. Please try again!")
+                            return false
+                        }
+                    }
+
+                    if (result.sfxName == modName) {
+                        try {
+                            browser.storage.local.set({
+                                sfxName: "off",
+                            }).then(
+                                function(result) {
+                                    browser.runtime.sendMessage(`sfxchange_off`);
+                                },
+                                function(error) {
+                                    console.log("promise failed");
+                                    console.log(error);
+                                    alert("Couldn't delete mod due to a disk error. Please try again!")
+                                    return false
+                                }
+                            );
+                        } catch (err) {
+                            console.log("couldn't auto swap sfx");
+                            console.log(err);
+                            alert("Couldn't delete mod due to a disk error. Please try again!")
+                            return false
+                        }
+                    }
+
+                    if (result.themeName == modName) {
+                        try {
+                            browser.storage.local.set({
+                                themeName: "off",
+                            }).then(
+                                function(result) {
+                                    browser.runtime.sendMessage(`themechange_off`);
+                                },
+                                function(error) {
+                                    console.log("promise failed");
+                                    console.log(error);
+                                    alert("Couldn't delete mod due to a disk error. Please try again!")
+                                    return false
+                                }
+                            );
+                        } catch (err) {
+                            console.log("couldn't auto swap theme");
                             console.log(err);
                             alert("Couldn't delete mod due to a disk error. Please try again!")
                             return false
@@ -255,6 +314,24 @@ async function deleteMod(modName) {
                     console.log(`Error while checking if need to swap: ${error}`);
                 }
             );
+
+            try {
+                localforage.setItem(MOD_DATABASE_KEY, previousData).then(function(value) {
+                    console.log("Deleted successfully")
+                    updateModList()
+                    return true
+                }).catch(function(err) {
+                    console.log("Write error");
+                    console.log(err);
+                    alert("Couldn't delete mod due to a disk error. Please try again!")
+                    return false
+                });
+            } catch (err) {
+                console.log("Write error");
+                console.log(err);
+                alert("Couldn't delete mod due to a disk error. Please try again!")
+                return false
+            }
         } else {
             console.log(modName,"doesn't even exist in the first place...");
             return true
@@ -262,6 +339,9 @@ async function deleteMod(modName) {
     } catch (err) {
         console.log(err);
         return false
+    }
+    if (needsRefresh) {
+        browser.runtime.sendMessage(`refreshWebModCache`);
     }
 }
 
@@ -594,6 +674,7 @@ const fileTypes = [
   "audio/x-wav",
   "audio/x-pn-wav",
   "audio/ogg",
+  "video/ogg",
 ];
 
 function validFileType(file) {

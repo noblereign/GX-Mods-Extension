@@ -37,15 +37,49 @@ var sfxSelector = document.getElementById('sfx-picker');
 var KeyboardVolumeSlider = document.getElementById('volumeKeyboard');
 var KeyboardSelector = document.getElementById('keyboard-picker');
 
+var ThemeSelector = document.getElementById('theme-picker');
+const lightThemeBox = document.getElementById('lightTheme');
+
 const muteShoppingBox = document.getElementById('muteShopping');
 
 const modList = document.getElementById('track-picker')
 const sfxModList = document.getElementById('sfx-picker')
 const keyboardModList = document.getElementById('keyboard-picker')
+const themeModList = document.getElementById('theme-picker')
+const webModList = document.getElementById('knownWebMods')
 
 const trackSource = document.getElementById('track-source')
 const sfxSource = document.getElementById('sfx-source')
 const keyboardSource = document.getElementById('keyboard-source')
+
+const webModItemTemplate = document.getElementById('webModTemplate')
+
+async function getPreferredColorScheme() {
+    let browserStorage = await browser.storage.local.get().then(
+        async function(result) {
+            return (typeof result.lightTheme == "undefined") ? "none" : result.lightTheme;
+        },
+        function(error) {
+            console.warn(`[GXM] Couldn't get color scheme from local storage: ${error}`);
+            return "none"
+        }
+    );
+
+    if (browserStorage == "none") {
+        if (window.matchMedia) {
+            if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                return 'dark';
+            } else {
+                return 'light';
+            }
+        }
+        return 'light';
+    } else {
+        return browserStorage ? "light" : "dark"
+    }
+}
+
+const noWebMods = document.getElementById('emptyWebMods')
 
 let moddedOptions = []
 
@@ -79,6 +113,8 @@ async function updateModList() {
             let backgroundMusicEntries = 0
             let browserSoundEntries = 0
             let keyboardSoundEntries = 0
+            let themeEntries = 0
+            let webModEntries = 0
 
             for (const [id, data] of Object.entries(modData)) {
                 if (data.layers) {
@@ -120,6 +156,69 @@ async function updateModList() {
                     sfxModList.appendChild(para);
                     moddedOptions.push(para)
                 }
+                if (data.webMods) {
+                    for (const [webModIndex, webModData] of Object.entries(data.webMods)) {
+                        for (const urlPattern of webModData.matches) {
+                            let validTab = null;
+                            await browser.tabs.query({currentWindow: true, active: true, url: urlPattern}).then((tabs) => {
+                                let tab = tabs[0]; // Safe to assume there will only be one result
+                                validTab = tab;
+                            }, console.warn)
+
+                            if (validTab) {
+                                webModEntries++
+                                let newModItem = webModItemTemplate.content.cloneNode(true);
+                                let modInfoContainer = newModItem.querySelector(".modName")
+                                modInfoContainer.textContent = data.displayName
+                                let modSource = newModItem.querySelector(".sourceSubtitle")
+                                modSource.textContent = urlPattern
+
+                                let checkBox = newModItem.querySelector(".webModCheckbox")
+                                checkBox.checked = (typeof webModData.enabled == "undefined") ? true : webModData.enabled;
+                                checkBox.addEventListener('change', async (event) => {
+                                    try {
+                                        let previousData = await localforage.getItem(MOD_DATABASE_KEY);
+                                        if (previousData == null) {
+                                            previousData = {}
+                                        }
+                                        
+                                        webModData.enabled = !webModData.enabled
+                                        previousData[id].webMods[webModIndex].enabled = webModData.enabled 
+                                        browser.runtime.sendMessage({
+                                            intent: "webModState",
+                                            modId: id,
+                                            index: webModIndex,
+                                            state: webModData.enabled
+                                        })
+
+                                        try {
+                                            let resultToSendBack = await localforage.setItem(MOD_DATABASE_KEY, previousData).then(function(value) {
+                                                console.log("Saved successfully")
+                                            }).catch(function(err) {
+                                                console.log(err);
+                                            });
+                                        } catch (err) {
+                                            console.log(err);
+                                        }
+                                    } catch (err) {
+                                        console.log(err);
+                                    }
+                                })
+                                
+                                webModList.appendChild(newModItem);
+                                moddedOptions.push(newModItem)
+                            }
+                        }
+                    }
+                }
+                if (data.theme) {
+                    themeEntries++
+                    const para = document.createElement("option");
+                    para.value = id;
+                    para.textContent = data.displayName;
+                    themeModList.appendChild(para);
+                    moddedOptions.push(para)
+                }
             }
 
             if (backgroundMusicEntries <= 0) {
@@ -140,9 +239,22 @@ async function updateModList() {
                 noModsMessage2.disabled = true;
                 sfxModList.appendChild(noModsMessage2);
             }
+            if (themeEntries <= 0) {
+                const noModsMessage4 = document.createElement("option");
+                noModsMessage4.label = "No mods of this type are installed.";
+                noModsMessage4.disabled = true;
+                themeModList.appendChild(noModsMessage4);
+            }
+
+            if (webModEntries > 0) {
+                noWebMods.remove();
+            }
+
             backgroundMusicEntries = null;
             keyboardSoundEntries = null;
             browserSoundEntries = null;
+            themeEntries = null;
+            webModEntries = null;
         }
         modData = null;
     } catch (err) {
@@ -176,6 +288,9 @@ function saveOptions() {
         sfxKeyboard: SFXkeyboardBox.checked,
         keyboardVolume: KeyboardVolumeSlider.value,
 
+        themeName: ThemeSelector.value,
+        lightTheme: lightThemeBox.checked,
+
         muteShopping: muteShoppingBox.checked,
         consentedToJSD: consentedToJSD
     });
@@ -189,7 +304,7 @@ async function restoreOptions() {
         muteFocusBox.checked = true; // android must always have this on or else it'll play in other apps :/
     }
 
-    function setCurrentChoice(result) {
+    async function setCurrentChoice(result) {
         consentedToJSD = (typeof result.consentedToJSD == "undefined") ? false : result.consentedToJSD;
         // MUSIC
         trackSelector.value = result.trackName || "off";
@@ -238,13 +353,16 @@ async function restoreOptions() {
                 sfxSource.classList.add("hidden");
             }
         } else {
-            trackSource.classList.add("hidden");
+            sfxSource.classList.add("hidden");
         }
 
         KeyboardSelector.value = result.keyboardName || "off";
         KeyboardVolumeSlider.value = result.keyboardVolume || 50;
 
         volumeKeyboardPercentage.textContent = KeyboardVolumeSlider.value;
+
+        ThemeSelector.value = result.themeName || "off";
+        lightThemeBox.checked = result.lightTheme || (await getPreferredColorScheme() === "light") || false;
 
         var selectedItem = KeyboardSelector.selectedOptions[0]
         if (typeof selectedItem !== 'undefined') {
@@ -255,7 +373,7 @@ async function restoreOptions() {
                 keyboardSource.classList.add("hidden");
             }
         } else {
-            trackSource.classList.add("hidden");
+            keyboardSource.classList.add("hidden");
         }
 
         loadingShimmer.setAttribute("disabled", "");
@@ -306,7 +424,7 @@ sfxSelector.addEventListener("change", function() {
             sfxSource.classList.add("hidden");
         }
     } else {
-        trackSource.classList.add("hidden");
+        sfxSource.classList.add("hidden");
     }
 });
 
@@ -324,8 +442,15 @@ KeyboardSelector.addEventListener("change", function() {
             keyboardSource.classList.add("hidden");
         }
     } else {
-        trackSource.classList.add("hidden");
+        keyboardSource.classList.add("hidden");
     }
+});
+
+ThemeSelector.addEventListener("change", function() {
+    const selectedOption = ThemeSelector.value; // Get the selected value
+    console.log("Selected theme:", selectedOption);
+    browser.runtime.sendMessage('themechange_' + selectedOption)
+    saveOptions()
 });
 
 var volumePercentage = document.getElementById('volumePercentage');
@@ -399,6 +524,10 @@ SFXbuttonsBox.addEventListener('change', (event) => {
 SFXupdatesBox.addEventListener('change', (event) => {
     saveOptions()
 })
+lightThemeBox.addEventListener('change', (event) => {
+    browser.runtime.sendMessage(`schemechange_${lightThemeBox.checked ? "light" : "dark"}`)
+    saveOptions()
+})
 muteShoppingBox.addEventListener('change', (event) => {
     if (muteShoppingBox.checked) {
         if (consentedToJSD) {
@@ -460,3 +589,34 @@ iConsent.onclick = function() {
     consentedToJSD = true
     saveOptions()
 }
+
+function sendButtonClickedEvent(event) {
+    let element = event.target;
+    if (element) {
+        if (element.matches(`input[type="button"]`) || element.matches(`button`) || element.matches(`a[href]`)) {
+            browser.runtime.sendMessage(element.matches(`a[href]`) ? 'linkpress' : 'buttonpress');
+        }
+    }
+}
+
+function sendCheckedEvent(event) {
+    let element = event.target;
+    if (element) {
+        if (element.matches(`input[type="checkbox"]`)) {
+            browser.runtime.sendMessage(`checkboxpress${event.target.checked}`);
+        } else if (element.matches(`input[type="radio"]`)) {
+            browser.runtime.sendMessage(`radiopress`);
+        }
+    }
+}
+
+document.addEventListener("click",sendButtonClickedEvent,{
+    capture: true,
+    once: false,
+    passive: true
+})
+document.addEventListener("change",sendCheckedEvent,{
+    capture: true,
+    once: false,
+    passive: true
+})

@@ -689,40 +689,45 @@ async function updateWebModsForAllTabs(modId, webModIndex, enabled) {
         }
     }
 
+    
+
     let modInfo = modData[modId]
     if (modInfo) {
         if (modInfo.webMods) {
             let webModData = modInfo.webMods[webModIndex]
             if (webModData) {
-                const tabs = await browser.tabs.query({});
-                for (const tab of tabs) {
-                    if (!tab.id) continue;
-                    if (enabled) {
-                        for (const cssBlob of webModData.css) {
-                            cssBlob.text().then((blobText) => {
-                                browser.tabs.insertCSS(
-                                    tab.id,
-                                    {
-                                        cssOrigin: "user",
-                                        code: blobText,
-                                        runAt: "document_start"
-                                    }
-                                )
-                            }, console.warn)
-                        } 
-                    } else {
-                        for (const cssBlob of webModData.css) {
-                            cssBlob.text().then((blobText) => {
-                                browser.tabs.removeCSS(
-                                    tab.id,
-                                    {
-                                        cssOrigin: "user",
-                                        code: blobText,
-                                    }
-                                )
-                            }, console.warn)
-                        } 
-                    }
+                for (const urlPattern of webModData.matches) {
+                    browser.tabs.query({url: urlPattern}).then(async (tabs) => {
+                        for (const tab of tabs) {
+                            if (!tab.id) continue;
+                            if (enabled) {
+                                for (const cssBlob of webModData.css) {
+                                    cssBlob.text().then((blobText) => {
+                                        browser.tabs.insertCSS(
+                                            tab.id,
+                                            {
+                                                cssOrigin: "user",
+                                                code: blobText,
+                                                runAt: "document_start"
+                                            }
+                                        )
+                                    }, console.warn)
+                                } 
+                            } else {
+                                for (const cssBlob of webModData.css) {
+                                    cssBlob.text().then((blobText) => {
+                                        browser.tabs.removeCSS(
+                                            tab.id,
+                                            {
+                                                cssOrigin: "user",
+                                                code: blobText,
+                                            }
+                                        )
+                                    }, console.warn)
+                                } 
+                            }
+                        }
+                    })
                 }
             } else {
                 console.log(`[GXM] Can't update web mods for ${modId} because it had no web mod for index ${webModIndex}`)

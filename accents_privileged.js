@@ -293,7 +293,7 @@ async function getPreferredColorScheme() {
     }
 }
 
-browser.theme.getCurrent().then(async function(currentTheme) { //TODO: I feel like we can better support light mode here
+browser.theme.getCurrent().then(async function(currentTheme) {
     let accentColor = currentTheme.colors?.icons_attention ?? '#fa1e4e';
     let backgroundColor = currentTheme.colors?.toolbar ?? (await getPreferredColorScheme() == "dark" ? '#121019' : '#f4f2f7');
     

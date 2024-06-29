@@ -964,7 +964,6 @@ async function onExtensionMessage(message, sender) {
                                                 for (const [webModIndex, webModData] of Object.entries(data.webMods)) {
                                                     if (allowedMods[id].includes(webModIndex)) {
                                                         if (webModData.enabled) {
-                                                            //TODO: what do we do if it gets disabled lollll
                                                             console.log("Inserting CSS...")
                                                             for (const cssBlob of webModData.css) {
                                                                 cssBlob.text().then((blobText) => {
@@ -2238,7 +2237,6 @@ async function handleUpdated(updateInfo) {
         console.log(`Mod theme is the same: ${modThemeIsSame}`)
         if (!modThemeIsSame) { // if the last theme is not the same as the current theme then the user likely switched mods
             if (Object.keys(currentAppliedTheme).length > 0) { // if mod theme is on
-                // TODO: Trigger refresh of colors
                 console.log("The current GXM theme was changed!")
             } else { // if mod theme is off
                 console.log("The GXM theme was disabled")

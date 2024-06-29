@@ -194,8 +194,6 @@ async function updateModList() {
     }
 }
 
-//TODO: Handle deletion of Themes, Keyboard Sounds, Browser Sounds correcterer
-
 async function deleteMod(modName) {
     let needsRefresh = false
     try {

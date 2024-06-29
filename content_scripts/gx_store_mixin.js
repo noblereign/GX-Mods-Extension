@@ -148,7 +148,6 @@ function handleModButton(installModButton, modId) {
                                 installModButton.textContent = "Installing..."
 
                                 //insert "don't close the tab" warning
-                                //TODO: wouldn't this fail in scenarios with multiple buttons?
                                 if (installModButton.parentElement.querySelector(".gxm-warning") == null) {
                                     installModButton.parentElement.insertAdjacentHTML("beforeend",`
                                     <span class="text-[11px] gxm-warning">
@@ -271,8 +270,6 @@ async function installMod(message) {
     console.log('[GXM] Installing mod',message.modId);
 
     let downloadedLayers = []
-    // TODO: Themes
-
     if (message.modLayers != null) {
         console.log("Fetching Background Music");
         updateInstallerButtons(message.modId,`Music... (0%)`)

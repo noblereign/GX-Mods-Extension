@@ -1012,6 +1012,7 @@ async function onExtensionMessage(message, sender) {
             let downloadedBrowserSounds = message.modBrowserSounds
             let downloadedWebMods = message.modPageStyles
             let downloadedTheme = message.modTheme
+            let downloadedIcon = message.modIcon
 
             if (downloadedLayers.length > 0 || (Object.keys(downloadedKeyboardSounds).length > 0) || (Object.keys(downloadedBrowserSounds).length > 0) || (Object.keys(downloadedWebMods).length > 0) || (Object.keys(downloadedTheme).length > 0)) {
                 console.log("Attempting save...");
@@ -1031,7 +1032,8 @@ async function onExtensionMessage(message, sender) {
                         webMods: ((Object.keys(downloadedWebMods).length > 0) ? downloadedWebMods : null),
                         theme: ((Object.keys(downloadedTheme).length > 0) ? downloadedTheme : null),
                         version: (message.modVersion ? message.modVersion : "unknown"),
-                        storePage: (message.modStorePage ? message.modStorePage : null)
+                        storePage: (message.modStorePage ? message.modStorePage : null),
+                        icon: (downloadedIcon ? downloadedIcon : null)
                     }
 
                     try {

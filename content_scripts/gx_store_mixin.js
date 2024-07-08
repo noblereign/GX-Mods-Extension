@@ -178,6 +178,7 @@ function handleModButton(installModButton, modId) {
                                     modStorePage: modStorePage,
                                     modMangledTitle: result.data.mangledTitle,
                                     modShortId: result.data.modShortId,
+                                    modIcons: result.data.icons
                                 })
 
                                 console.log("Install result");
@@ -538,6 +539,22 @@ async function installMod(message) {
         downloadedThemes = message.modTheme // lol
     }
 
+    let downloadedIcon = null
+    if (message.modIcons != null) {
+        updateInstallerButtons(message.modId,`Icon...`)
+        let useIcon = Object.values(message.modIcons)[0]; // naively download the first icon we can find for now. it seems like most mods only supply "512", which is good enough for us.
+        if (useIcon) {
+            let downloadURL = useIcon.iconUrl
+            if (downloadURL) {
+                try {
+                    downloadedIcon = await fetchRetryBlob(downloadURL)
+                } catch (error) {
+                    console.warn(`Failed to download icon: ${error}`)
+                }
+            }
+        }
+    }
+
     console.log("Fetched everything!");
 
     if (downloadedLayers.length > 0 || (Object.keys(downloadedKeyboardSounds).length > 0) || (Object.keys(downloadedBrowserSounds).length > 0) || (Object.keys(downloadedWebMods).length > 0) || (Object.keys(downloadedThemes).length > 0)) {
@@ -555,6 +572,7 @@ async function installMod(message) {
             modStorePage: message.modStorePage,
             modMangledTitle: message.modMangledTitle,
             modShortId: message.modShortId,
+            modIcon: downloadedIcon
         })
     } else {
         return {

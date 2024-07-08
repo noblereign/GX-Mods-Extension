@@ -9,6 +9,11 @@ const modList = document.getElementById('modListList')
 const modItemTemplate = document.getElementById('modItemTemplate')
 
 const filePicker = document.getElementById('files');
+const iconPicker = modal.querySelector('#icon');
+const localIconPreview = modal.querySelector('.modIcon');
+
+
+
 const preview = document.querySelector(".preview");
 
 const SFXfilePicker = document.getElementById('sfx');
@@ -25,8 +30,28 @@ const lengthWarningSFX = document.getElementById("longSfx")
 
 const storeButton = document.getElementById('goToStore')
 
+
+const modal_import = document.getElementById('importModModal')
+const openImportModalButton = document.getElementById('importModButton')
+
+const acceptButton_import = document.getElementById('finish_import');
+const cancelButton_import = document.getElementById("cancel_import")
+const errMessage_import = document.getElementById("errorMessage_import")
+
+const zipPicker = document.getElementById('zip');
+const zipPreview = document.querySelector(".zipPreview");
+const zipItemTemplate = document.getElementById('unzippedMod')
+
+acceptButton_import.disabled = true
+acceptButton.disabled = true
+
 filePicker.addEventListener("change", updateDisplay);
 SFXfilePicker.addEventListener("change", updateSFXDisplay);
+
+iconPicker.addEventListener("change", updateIconDisplay);
+iconPicker.addEventListener("cancel", updateIconDisplay);
+
+zipPicker.addEventListener("change", tryUnzipFile);
 
 var chosenFiles = []
 var chosenFilesDurations = []
@@ -113,6 +138,7 @@ function getBase64(file) {
     });
 }
 
+const modIconList = {}
 async function updateModList() {
     console.log("[GXM] Attempting to update mod list in manager");
     try {
@@ -144,6 +170,14 @@ async function updateModList() {
                     let storePageButton = newModItem.querySelector(".goToStoreButton")
                     storePageButton.href = data.storePage
                     storePageButton.classList.remove("hidden");
+                }
+
+                if (data.icon != null) {
+                    let modIcon = newModItem.querySelector(".modIcon")
+                    if (!modIconList[id]) {
+                        modIconList[id] = URL.createObjectURL(data.icon);
+                    }
+                    modIcon.src = modIconList[id];
                 }
 
                 let chipBag = newModItem.querySelector(".chipBag")
@@ -317,6 +351,8 @@ async function deleteMod(modName) {
 
             try {
                 localforage.setItem(MOD_DATABASE_KEY, previousData).then(function(value) {
+                    URL.revokeObjectURL(modIconList[modName])
+                    delete modIconList[modName]
                     console.log("Deleted successfully")
                     updateModList()
                     return true
@@ -345,6 +381,7 @@ async function deleteMod(modName) {
     }
 }
 
+let lastSetIcon = null
 async function verifyAndSaveMod(modId) {
     if (isEmptyOrSpaces(modNameInput.value)) {
         errMessage.textContent = "Mod name cannot be blank";
@@ -437,13 +474,22 @@ async function verifyAndSaveMod(modId) {
             }
         }
 
+        let setIcon = null;
+        if (iconPicker.value != "") {
+            try {
+                setIcon = iconPicker.files[0]
+            } catch (error) {
+                console.warn(`Couldn't save icon: ${error}`)
+            }
+        }
+
         try {
             let previousData = await localforage.getItem(MOD_DATABASE_KEY);
             if (previousData == null) {
                 previousData = {}
             }
             if (previousData[modId]) {
-                errMessage.textContent = "Mod name is already in use.";
+                errMessage.textContent = "Mod ID is already in use, please try saving again";
                 errMessage.classList.remove("hidden");
                 return false
             } else {
@@ -453,6 +499,7 @@ async function verifyAndSaveMod(modId) {
                     layers: (saveArray.length > 0 ? saveArray : null),
                     keyboardSounds: ((Object.keys(saveKeyboard).length > 0) ? saveKeyboard : null),
                     browserSounds: ((Object.keys(saveSFX).length > 0) ? saveSFX : null),
+                    icon: (setIcon ? setIcon : null)
                 }
                 try {
                     localforage.setItem(MOD_DATABASE_KEY, previousData).then(function(value) {
@@ -663,6 +710,585 @@ function updateSFXDisplay() {
     }
 }
 
+function updateIconDisplay() {
+    if (lastSetIcon) {
+        URL.revokeObjectURL(lastSetIcon);
+        lastSetIcon = null
+    }
+    localIconPreview.src = "placeholder.png";
+    const curFiles = iconPicker.files;
+    if (curFiles.length === 1) {
+      for (const file of curFiles) {
+        lastSetIcon = URL.createObjectURL(file);
+        localIconPreview.src = lastSetIcon;
+      }
+    }
+}
+
+const iconUrls = []
+const zipsToSave = []
+async function tryUnzipFile() {
+    while (zipPreview.firstChild) {
+        zipPreview.removeChild(zipPreview.firstChild);
+    }
+    for (const url of iconUrls) {
+        URL.revokeObjectURL(url);
+    }
+    zipsToSave.length = 0
+    iconUrls.length = 0
+
+    const curFiles = zipPicker.files;
+    acceptButton_import.disabled = true
+    if (curFiles.length === 0) {
+        acceptButton_import.disabled = true
+        const para = document.createElement("span");
+        para.textContent = "No files currently selected";
+        para.classList.add("emptyState");
+        zipPreview.appendChild(para);
+    } else if (curFiles.length == 1) {
+        let valid = true
+        let numero = 1
+        for (const file of curFiles) {
+            const para = document.createElement("p");
+            if (validZipFile(file)) {
+                para.textContent = `${file.name}: Unzipping`;
+                zipPreview.appendChild(para);
+                const zipFileReader = new zip.BlobReader(file)
+                const manifestWriter = new zip.TextWriter();
+                const iconWriter = new zip.BlobWriter();
+                const zipReader = new zip.ZipReader(zipFileReader);
+                const entries = await zipReader.getEntries()
+                para.textContent = `${file.name}: Checking for manifest`;
+                let manifest = null
+                for (const entry of entries) {
+                    console.log(entry);
+                    if (entry.filename === "manifest.json") {
+                        console.log("Found manifest!");
+                        manifest = entry
+                    } else if (entry.filename.includes("manifest.json")) {
+                        if (!manifest) {
+                            console.log("Mod is zipped improperly") // maybe it'd be possible to automatically account for this, but im too lazy lollll
+                            para.classList.add("invalidItem");
+                            para.textContent = `${file.name}: Mod is zipped improperly.\nPlease move the mod to the root of the zip file and try again.\nWhen done correctly, you should immediately see 'manifest.json' without needing to open a folder.`;
+                            
+                            valid = false
+                        }
+                    }
+                }
+
+                if ((manifest !== null) && valid) {
+                    para.textContent = `${file.name}: Found manifest, awaiting data`;
+                    const manifestData = await manifest.getData(manifestWriter, {transferStreams: false, useWebWorkers: false})
+                    console.log("String to JSON...")
+                    let manifestSource = null
+                    try {
+                        manifestSource = JSON.parse(manifestData)
+                    } catch (error) {
+                        console.warn(error);
+                        para.textContent = `${file.name}: ${error}`;
+                        valid = false
+                    }
+                    
+                    if (manifestSource !== null) {
+                        console.log("Manifest data:");
+                        console.log(manifestSource);
+                        let modName = manifestSource.name ? manifestSource.name : file.name
+                        para.textContent = `${modName}: Manifest is valid JSON`;
+                        if ((manifestSource.mod !== null) && (manifestSource.mod.payload !== null)) {
+                            let modPayload = manifestSource.mod.payload
+
+                            let musicArray = modPayload.background_music
+                            let keyboardArray = modPayload.keyboard_sounds
+                            let browserArray = modPayload.browser_sounds
+                            let cssArray = modPayload.page_styles
+                            let themeArray = modPayload.theme
+
+                            let iconObject = manifestSource.icons
+
+                            if (musicArray || keyboardArray || browserArray || cssArray || themeArray) {
+                                para.textContent = `Found the mod data for ${modName}, generating preview now...`;
+                                
+                                let newModItem = zipItemTemplate.content.cloneNode(true);
+                                console.log(newModItem);
+                                let modInfoContainer = newModItem.querySelector(".modInfo")
+                                modInfoContainer.childNodes[0].nodeValue = modName
+                                let modSourceContainer = modInfoContainer.querySelector(".sourceSubtitle")
+                                modSourceContainer.textContent = (manifestSource.version ? `Version ${manifestSource.version}` : "No version information")
+
+                                if (iconObject) {
+                                    console.log("Icon data detected.")
+                                    let useIcon = Object.values(iconObject)[0];
+                                    console.log(useIcon)
+                                    var icon = entries.find(obj => {
+                                        return obj.filename.toLowerCase() === useIcon.toLowerCase()
+                                    })
+                                    console.log(icon)
+                                    let modIcon = newModItem.querySelector(".modIcon")
+                                    if (icon) {
+                                        console.log("setting icon")
+                                        const iconData = await icon.getData(iconWriter, {transferStreams: false, useWebWorkers: false});
+                                        let url = URL.createObjectURL(iconData);
+                                        modIcon.src = url;
+                                        iconUrls.push(url)
+                                        console.log("Icon set!!")
+                                    }
+                                }
+
+                                let chipBag = newModItem.querySelector(".chipBag")
+                                if (musicArray) {
+                                    const para = document.createElement("span");
+                                    para.textContent = "Background music";
+                                    para.classList.add("chip");
+                                    chipBag.appendChild(para);
+                                }
+                                if (browserArray) {
+                                    const para = document.createElement("span");
+                                    para.textContent = "Browser sounds";
+                                    para.classList.add("chip");
+                                    chipBag.appendChild(para);
+                                }
+                                if (keyboardArray) {
+                                    const para = document.createElement("span");
+                                    para.textContent = "Keyboard sounds";
+                                    para.classList.add("chip");
+                                    chipBag.appendChild(para);
+                                }
+                                if (cssArray) {
+                                    const para = document.createElement("span");
+                                    para.textContent = "Web modding";
+                                    para.classList.add("chip");
+                                    chipBag.appendChild(para);
+                                }
+                                if (themeArray) {
+                                    const para = document.createElement("span");
+                                    para.textContent = "Theme";
+                                    para.classList.add("chip");
+                                    chipBag.appendChild(para);
+                                }
+
+                                zipPreview.appendChild(newModItem);
+                                zipsToSave.push(file)
+                                para.remove()
+                            } else {
+                                para.classList.add("invalidItem");
+                                para.textContent = `${modName} isn't compatible with GXM.`;
+                                
+                                valid = false
+                            }
+                        } else {
+                            para.classList.add("invalidItem");
+                            para.textContent = `${modName}: Couldn't find mod data.`;
+                            
+                            valid = false
+                        }
+                    }
+                } else if (valid) {
+                    para.classList.add("invalidItem");
+                    para.textContent = `${file.name}: Couldn't find manifest; likely not a mod.`;
+                    
+                    valid = false
+                }
+                await zipReader.close();
+            } else {
+                para.classList.add("invalidItem");
+                para.textContent = `${file.name}: Not a valid zip file.`;
+                zipPreview.appendChild(para);
+                valid = false
+            }
+            numero ++
+        }
+
+        acceptButton_import.disabled = !valid
+    } else {
+        acceptButton_import.disabled = true
+        const para = document.createElement("span");
+        para.textContent = "Too many files, please select no more than 1";
+        para.classList.add("emptyState");
+        preview.appendChild(para);
+    }
+}
+
+async function trySaveZipMod() {
+    if (zipsToSave.length <= 0) {
+        errMessage.textContent = "Nothing to save!";
+        errMessage.classList.remove("hidden");
+        return false
+    }
+    acceptButton_import.textContent = "Importing..."
+    for (const file of zipsToSave) {
+        if (validZipFile(file)) {
+            modId = self.crypto.randomUUID()
+
+            const zipFileReader = new zip.BlobReader(file)
+            const manifestWriter = new zip.TextWriter();
+            const zipReader = new zip.ZipReader(zipFileReader);
+            const entries = await zipReader.getEntries()
+
+            let manifest = null
+            for (const entry of entries) {
+                console.log(entry);
+                if (entry.filename === "manifest.json") {
+                    console.log("Found manifest!");
+                    manifest = entry
+                }
+            }
+
+            if (manifest !== null) {
+                const manifestData = await manifest.getData(manifestWriter, {transferStreams: false, useWebWorkers: false})
+                let manifestSource = null
+                try {
+                    manifestSource = JSON.parse(manifestData)
+                } catch (error) {
+                    console.warn(error);
+                    para.textContent = `${file.name}: ${error}`;
+                }
+                
+                if (manifestSource !== null) {
+                    let modName = manifestSource.name ? manifestSource.name : file.name
+                    if ((manifestSource.mod !== null) && (manifestSource.mod.payload !== null)) {
+                        let modPayload = manifestSource.mod.payload
+
+                        let musicArray = modPayload.background_music
+                        let keyboardArray = modPayload.keyboard_sounds
+                        let browserArray = modPayload.browser_sounds
+                        let cssArray = modPayload.page_styles
+                        let themeArray = modPayload.theme
+
+                        let iconObject = manifestSource.icons
+                        let iconData = null;
+
+                        if (musicArray || keyboardArray || browserArray || cssArray || themeArray) {
+                            if (iconObject) {
+                                let useIcon = Object.values(iconObject)[0];
+                                var icon = entries.find(obj => {
+                                    return obj.filename.toLowerCase() === useIcon.toLowerCase()
+                                })
+                                if (icon) {
+                                    let blobWriter = new zip.BlobWriter();
+                                    iconData = await icon.getData(blobWriter, {transferStreams: false, useWebWorkers: false});
+                                }
+                            }
+
+                            let downloadedLayers = []
+                            if (musicArray != null) {
+                                console.log("Unzipping Background Music");
+                                for (const fileURL of musicArray) {
+                                    if (fileURL.hasOwnProperty('name')) { // This is a new format mod (Multiple songs in one)
+                                        let currentDownloadedTrack = {
+                                            id: fileURL.id,
+                                            name: fileURL.name,
+                                            author: fileURL.author,
+                                            layers: []
+                                        }
+                                        for (const actualURL of fileURL.tracks) {
+                                            console.log('[GXM] Unzipping',actualURL);
+                                            try {
+                                                let result = null
+                                                var fileObject = entries.find(obj => {
+                                                    return obj.filename.toLowerCase() === actualURL.toLowerCase()
+                                                })
+                                                if (fileObject) {
+                                                    let blobWriter = new zip.BlobWriter();
+                                                    result = await fileObject.getData(blobWriter, {transferStreams: false, useWebWorkers: false});
+                                                }
+
+                                                if (result != null) {
+                                                    currentDownloadedTrack.layers.push(result)
+                                                } else {
+                                                    errMessage_import.classList.remove("hidden");
+                                                    errMessage_import.textContent = `${modName}: Couldn't find ${actualURL}`;
+                                                    await zipReader.close();
+                                                    return false
+                                                }
+                                            } catch (err) {
+                                                console.log("Download error");
+                                                console.log(err);
+                                                errMessage_import.classList.remove("hidden");
+                                                errMessage_import.textContent = `${modName}, ${actualURL}: ${err}`;
+                                                await zipReader.close();
+                                                return false
+                                            }
+                                        }
+                                        downloadedLayers.push(currentDownloadedTrack)
+                                    } else { // Old style mod, just one track
+                                        console.log('[GXM] Unzipping', fileURL);
+                                        try {
+                                            let result = null
+                                            var fileObject = entries.find(obj => {
+                                                return obj.filename.toLowerCase() === fileURL.toLowerCase()
+                                            })
+                                            if (fileObject) {
+                                                let blobWriter = new zip.BlobWriter();
+                                                result = await fileObject.getData(blobWriter, {transferStreams: false, useWebWorkers: false});
+                                            }
+
+                                            if (result != null) {
+                                                downloadedLayers.push(result)
+                                            } else {
+                                                errMessage_import.classList.remove("hidden");
+                                                errMessage_import.textContent = `${modName}: Couldn't find ${fileURL}`;
+                                                await zipReader.close();
+                                                return false
+                                            }
+                                        } catch (err) {
+                                            console.log("Download error");
+                                            console.log(err);
+                                            errMessage_import.classList.remove("hidden");
+                                            errMessage_import.textContent = `${modName}, ${fileURL}: ${err}`;
+                                            await zipReader.close();
+                                            return false
+                                        }
+                                    }
+                                }
+                            }
+
+                            let downloadedKeyboardSounds = {}
+                            if (keyboardArray != null) {
+                                console.log("Unzipping Keyboard Sounds");
+
+                                for (const [soundCategory, soundsArray] of Object.entries(keyboardArray)) {
+                                    console.log("fetching",soundCategory)
+                                    downloadedKeyboardSounds[soundCategory] = []
+                                    for (const fileURL of soundsArray) {
+                                        if (fileURL != "") {
+                                            console.log('[GXM] Unzipping',fileURL);
+                                            try {
+                                                let result = null
+                                                var fileObject = entries.find(obj => {
+                                                    return obj.filename.toLowerCase() === fileURL.toLowerCase()
+                                                })
+                                                if (fileObject) {
+                                                    let blobWriter = new zip.BlobWriter();
+                                                    result = await fileObject.getData(blobWriter, {transferStreams: false, useWebWorkers: false});
+                                                }
+                            
+                                                if (result != null) {
+                                                    downloadedKeyboardSounds[soundCategory].push(result)
+                                                } else {
+                                                    errMessage_import.classList.remove("hidden");
+                                                    errMessage_import.textContent = `${modName}: Couldn't find ${fileURL}`;
+                                                    await zipReader.close();
+                                                    return false
+                                                }
+                                            } catch (err) {
+                                                console.log("Download error");
+                                                console.log(err);
+                                                errMessage_import.classList.remove("hidden");
+                                                errMessage_import.textContent = `${modName}, ${fileURL}: ${err}`;
+                                                await zipReader.close();
+                                                return false
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            let downloadedBrowserSounds = {}
+                            if (browserArray != null) {
+                                console.log("Unzipping Browser Sounds");
+
+                                for (const [soundCategory, soundsArray] of Object.entries(browserArray)) {
+                                    console.log("fetching",soundCategory)
+                                    downloadedBrowserSounds[soundCategory] = []
+                                    for (const fileURL of soundsArray) {
+                                        if (fileURL != "") {
+                                            console.log('[GXM] Unzipping',fileURL);
+                                            
+                                            try {
+                                                let result = null
+                                                var fileObject = entries.find(obj => {
+                                                    return obj.filename.toLowerCase() === fileURL.toLowerCase()
+                                                })
+                                                if (fileObject) {
+                                                    let blobWriter = new zip.BlobWriter();
+                                                    result = await fileObject.getData(blobWriter, {transferStreams: false, useWebWorkers: false});
+                                                }
+                            
+                                                if (result != null) {
+                                                    downloadedBrowserSounds[soundCategory].push(result)
+                                                } else {
+                                                    errMessage_import.classList.remove("hidden");
+                                                    errMessage_import.textContent = `${modName}: Couldn't find ${fileURL}`;
+                                                    await zipReader.close();
+                                                    return false
+                                                }
+                                            } catch (err) {
+                                                console.log("Download error");
+                                                console.log(err);
+                                                errMessage_import.classList.remove("hidden");
+                                                errMessage_import.textContent = `${modName}, ${fileURL}: ${err}`;
+                                                await zipReader.close();
+                                                return false
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            let downloadedWebMods = {}
+                            if (cssArray != null) {
+                                console.log("Fetching Web Mods");
+
+                                let modIndex = 0
+                                for (const [webMod, webData] of Object.entries(cssArray)) {
+                                    console.log("fetching a web mod")
+
+                                    downloadedWebMods[modIndex] = {
+                                        matches: webData.matches,
+                                        enabled: true,
+                                        css: [],
+                                    }
+                                    for (const fileURL of webData.css) {
+                                        if (fileURL != "") {
+                                            console.log('[GXM] Unzipping',fileURL);
+                                            try {
+                                                let css = null
+                                                var fileObject = entries.find(obj => {
+                                                    return obj.filename.toLowerCase() === fileURL.toLowerCase()
+                                                })
+                                                if (fileObject) {
+                                                    let textWriter = new zip.TextWriter();
+                                                    css = await fileObject.getData(textWriter, {transferStreams: false, useWebWorkers: false});
+                                                }
+
+                                                if (css != null) {
+                                                    // 🐺 https://github.com/opera-gaming/gxmods/blob/main/documentation/Mod_Template/webmodding/opera.css
+                                                    // Opera GX uses env() CSS variables which aren't changeable by WebExtensions (as far as I know.)
+                                                    // We need to do conversion on download to detect the env variables and change them to regular old
+                                                    // CSS variables.
+                                                    console.log(`Converting ${fileURL}`)
+                                                    let worked = true
+
+                                                    if (worked) {
+                                                        const editedCSS = css.replaceAll("env(-", "var(--")
+                                                        const editedBlob = new Blob([editedCSS], {
+                                                            type: 'text/css'
+                                                        });
+
+                                                        downloadedWebMods[modIndex].css.push(editedBlob)
+                                                    } else {
+                                                        errMessage_import.classList.remove("hidden");
+                                                        errMessage_import.textContent = `${modName}: Conversion failed for web mod ${fileURL}`;
+                                                        await zipReader.close();
+                                                        return false
+                                                    }
+                                                } else {
+                                                    console.log("Got a null result");
+                                                    errMessage_import.classList.remove("hidden");
+                                                    errMessage_import.textContent = `${modName}: Couldn't find ${fileURL}`;
+                                                    await zipReader.close();
+                                                    return false
+                                                }
+                                            } catch (err) {
+                                                console.log("Download error");
+                                                console.log(err);
+                                                errMessage_import.classList.remove("hidden");
+                                                errMessage_import.textContent = `${modName}, ${fileURL}: ${err}`;
+                                                await zipReader.close();
+                                                return false
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            let downloadedThemes = {}
+                            if (themeArray != null) {
+                                downloadedThemes = themeArray // lol
+                            }
+                            await zipReader.close();
+
+                            try {
+                                let previousData = await localforage.getItem(MOD_DATABASE_KEY);
+                                if (previousData == null) {
+                                    previousData = {}
+                                }
+                                if (previousData[modId]) {
+                                    errMessage_import.textContent = "Mod ID is already in use, please try saving again";
+                                    errMessage_import.classList.remove("hidden");
+                                    return false
+                                } else {
+                                    previousData[modId] = {
+                                        displayName: modName,
+                                        source: "Imported from zip",
+                                        layers: ((downloadedLayers.length > 0) ? downloadedLayers : null),
+                                        keyboardSounds: ((Object.keys(downloadedKeyboardSounds).length > 0) ? downloadedKeyboardSounds : null),
+                                        browserSounds: ((Object.keys(downloadedBrowserSounds).length > 0) ? downloadedBrowserSounds : null),
+                                        webMods: ((Object.keys(downloadedWebMods).length > 0) ? downloadedWebMods : null),
+                                        theme: ((Object.keys(downloadedThemes).length > 0) ? downloadedThemes : null),
+                                        version: (manifestSource.version ? manifestSource.version : "unknown"),
+                                        icon: (iconData ? iconData : null)
+                                    }
+                                    try {
+                                        localforage.setItem(MOD_DATABASE_KEY, previousData).then(function(value) {
+                                            console.log("Saved successfully")
+                                            updateModList()
+                                            modal_import.classList.add("hidden");
+
+                                            while (zipPreview.firstChild) {
+                                                zipPreview.removeChild(zipPreview.firstChild);
+                                            }
+                                            for (const url of iconUrls) {
+                                                URL.revokeObjectURL(url);
+                                            }
+                                            zipsToSave.length = 0;
+                                            iconUrls.length = 0;
+                                            filePicker.value = "";
+                                            acceptButton_import.disabled = true
+                                            const para = document.createElement("span");
+                                            para.textContent = "No files currently selected";
+                                            para.classList.add("emptyState");
+                                            zipPreview.appendChild(para);
+
+                                            return true
+                                        }).catch(function(err) {
+                                            console.log(err);
+                                            errMessage_import.textContent = "Write error; check console for details!";
+                                            errMessage_import.classList.remove("hidden");
+                                            return false
+                                        });
+                                    } catch (err) {
+                                        console.log(err);
+                                        errMessage_import.textContent = "Write error; check console for details!";
+                                        errMessage_import.classList.remove("hidden");
+                                        return false
+                                    }
+                                }
+                            } catch (err) {
+                                console.log(err);
+                                errMessage_import.textContent = "Read error; check console for details!";
+                                errMessage_import.classList.remove("hidden");
+                                return false
+                            }
+                        } else {
+                            errMessage_import.classList.remove("hidden");
+                            errMessage_import.textContent = `${modName} isn't compatible with GXM.`;
+                            await zipReader.close();
+                            return false
+                        }
+                    } else {
+                        errMessage_import.classList.remove("hidden");
+                        errMessage_import.textContent = `${modName}: Couldn't find mod data`;
+                        await zipReader.close();
+                        return false
+                    }
+                }
+            } else {
+                errMessage_import.classList.remove("hidden");
+                errMessage_import.textContent = `${file.name}: Couldn't find manifest; likely not a mod.`;
+                await zipReader.close();
+                return false
+            }
+            await zipReader.close();
+        } else {
+            errMessage_import.classList.remove("hidden");
+            errMessage_import.textContent = `${file.name}: Not a valid zip file.`;
+            return false
+        }
+    }
+}
+
+
 
 
 // https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types
@@ -681,6 +1307,15 @@ function validFileType(file) {
   return fileTypes.includes(file.type);
 }
 
+const zipFileTypes = [
+    "application/zip",
+    "application/x-zip-compressed",
+];
+
+function validZipFile(file) {
+    return zipFileTypes.includes(file.type);
+}
+  
 function returnFileSize(number) {
   if (number < 1024) {
     return `${number} bytes`;
@@ -692,6 +1327,7 @@ function returnFileSize(number) {
 }
 
 openModalButton.onclick = function() {
+    errMessage.classList.add("hidden");
     modal.classList.remove("hidden");
 };
 
@@ -704,6 +1340,23 @@ acceptButton.onclick = function () {
     verifyAndSaveMod()
     acceptButton.disabled = false
 };
+
+openImportModalButton.onclick = function() {
+    errMessage_import.classList.add("hidden");
+    modal_import.classList.remove("hidden");
+};
+
+cancelButton_import.onclick = function() {
+    modal_import.classList.add("hidden");
+};
+
+acceptButton_import.onclick = function () {
+    acceptButton_import.disabled = true
+    errMessage_import.classList.add("hidden");
+    trySaveZipMod()
+    acceptButton_import.textContent = "Add mod"
+};
+
 
 if (document.readyState === "loading") {
     console.log("[GXM Manager] Waiting for DOM Content Load");

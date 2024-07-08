@@ -9,21 +9,40 @@
     <script src="../accents_privileged.js"></script>
   </head>
   <body>
-
     <template id="modItemTemplate">
       <li class="modItem">
-        <div class="modInfo">
-          Mod Name
-          <br>
-          <div class="chipBag">
-          </div> 
-          <span class="sourceSubtitle">Source</span>
+        <div class="infoContainer">
+          <div class="modIconContainer">
+            <img alt="Mod Icon" class="modIcon" src="placeholder.png">
+          </div>
+          <div class="modInfo">
+            Mod Name
+            <br>
+            <div class="chipBag">
+            </div> 
+            <span class="sourceSubtitle">Source</span>
+          </div>
         </div>
         <div class="buttonsContainer">
           <a class="gxButton goToStoreButton hidden" href="https://store.gx.me/" target="_blank"><svg width="0" height="17" viewBox="0 0 0 17" fill="none" xmlns="http://www.w3.org/2000/svg"></svg>Store</a>
           <button class="gxButton deleteModButton"><svg width="0" height="17" viewBox="0 0 0 17" fill="none" xmlns="http://www.w3.org/2000/svg"></svg>Delete</button>
         </div>
       </li>
+    </template>
+
+    <template id="unzippedMod">
+      <div class="modItem" style="padding: 16px;">
+        <div class="infoContainer">
+          <div class="modIconContainer">
+            <img alt="Mod Icon" class="modIcon" src="placeholder.png">
+          </div>
+          <div class="modInfo">Mod Name<br>
+            <div class="chipBag">
+            </div> 
+            <span class="sourceSubtitle">Version 1.0</span>
+          </div>
+        </div>
+      </div>
     </template>
 
     <template id="sfxItemTemplate">
@@ -78,6 +97,7 @@
     <div class="optionContainer buttonsContainer">
       <a class="gxButton" id="goToStore" href="https://store.gx.me/" target="_blank"><svg width="0" height="17" viewBox="0 0 0 17" fill="none" xmlns="http://www.w3.org/2000/svg"></svg>Store</a>
       <button class="gxButton" id="createModButton"><svg width="18" height="17" viewBox="0 0 18 17" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18 11H17C16.4477 11 16 10.5523 16 10V5.5M18 13H17C16.4477 13 16 13.4477 16 14V15.5C16 16.0523 15.5523 16.5 15 16.5H3C2.44772 16.5 2 16.0523 2 15.5V3.5C2 2.94772 2.44772 2.5 3 2.5H15C15.5523 2.5 16 2.94772 16 3.5V5.5M16 5.5H18" stroke="currentColor"></path><path d="M5 2.5V0.5M9 2.5V0.5M2 14.5H0M2 11.5H0M2 7.5H0M2 4.5H0" stroke="currentColor"></path><rect x="4.5" y="5" width="9" height="9" rx="1.5" stroke="currentColor"></rect><path d="M10 14.5V16.5M7 14.5V16.5M11.5 2.5V4.5" stroke="currentColor"></path><path d="M7 7.5H8.07074L8.97904 9.97656H9.02096L9.92926 7.5H11V11.5H10.1581V9.04297H10.1284L9.269 11.4746H8.731L7.87162 9.0293H7.84192V11.5H7V7.5Z" fill="currentColor"></path></svg>Create</button>
+      <button class="gxButton" id="importModButton"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-archive"><path d="M10 12v-1"/><path d="M10 18v-2"/><path d="M10 7V6"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15.5 22H18a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v16a2 2 0 0 0 .274 1.01"/><circle cx="10" cy="20" r="2"/></svg>Import</button>
     </div>
 
     <div id="createModModal" class="modal hidden">
@@ -85,7 +105,21 @@
         <div class="modalContainer">
           <h1>Create new mod</h1>
           <hr>
+          <hr class="spacer">
           <label for="modname">Mod name<input type="text" id="modname" name="modname"></label>
+          <hr class="spacer">
+          <span class="titleMsg" id="iconTitle">
+            Mod icon<br><hr class="spacer">
+            <label for="icon" id="iconButton" class="modIconContainer">
+              <img alt="Mod Icon" class="modIcon" src="placeholder.png">
+              <div class="iconButtonOverlay"></div>
+              <input type="file" id="icon" name="icon" accept="image/*" multiple>
+            </label>
+          </span>
+          
+          <span class="subtitle">Optional. Accepts any image file. Max files: 1.</span>
+          <hr class="spacer">
+          <hr>
           <hr class="spacer">
           <span class="titleMsg" id="filesTitle">Layers<br><label for="files" id="filesButton">Choose files<input type="file" id="files" name="files" accept=".mp3, .wav, .ogg, .opus" multiple></label></span>
           <span class="subtitle">Each layer will be played in ascending order. Accepted file types: mp3, ogg, wav. Max files: 7.</span>
@@ -97,6 +131,7 @@
             <span class="emptyState">No files currently selected</span>
           </div>
           <hr>
+          <hr class="spacer">
           <span class="subtitle invalidItem hidden" id="lengthDifference">Some layers have different lengths! This will cause desyncs sooner or later!<br><br></span>
 
           <span class="titleMsg" id="sfxTitle">Sound effects<br><label for="sfx" id="sfxFilesButton">Choose files<input type="file" id="sfx" name="sfx" accept=".mp3, .wav, .ogg, .opus" multiple></label></span>
@@ -114,12 +149,35 @@
           <div class="buttonsContainer">
             <span class="subtitle invalidItem hidden" id="errorMessage">Something went wrong, please try again.</span>
             <button class="gxButton" id="cancel" draggable="false"><svg width="0" height="17" viewBox="0 0 0 17" fill="none" xmlns="http://www.w3.org/2000/svg"></svg>Cancel</button>
-            <button class="gxButton" id="finish" disabled><svg width="0" height="17" viewBox="0 0 0 17" fill="none" xmlns="http://www.w3.org/2000/svg"></svg>Create</button>
+            <button class="gxButton finishButton" id="finish" disabled><svg width="0" height="17" viewBox="0 0 0 17" fill="none" xmlns="http://www.w3.org/2000/svg"></svg>Create</button>
           </div>
         </div>
       </div>
     </div>
+
+    <div id="importModModal" class="modal hidden">
+      <div class="modalContent">
+        <div class="modalContainer">
+          <h1>Import mod from archive</h1>
+          <hr>
+          <span class="titleMsg" id="zipTitle">Zip archive<br><label for="zip" id="zipButton">Choose file<input type="file" id="zip" name="zip" accept=".zip"></label></span>
+          <hr>
+          <div class="zipPreview">
+            <span class="emptyState">No files currently selected</span>
+          </div>
+          <hr>
+
+          <div class="buttonsContainer">
+            <span class="subtitle invalidItem hidden" id="errorMessage_import">Something went wrong, please try again.</span>
+            <button class="gxButton" id="cancel_import" draggable="false">Cancel</button>
+            <button class="gxButton finishButton" id="finish_import" disabled>Add mod</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script src="../libs/localforage.min.js"></script>
+    <script src="../libs/zip-no-worker-inflate.min.js"></script>
     <script src="manager.js"></script>
     <script src="../content_scripts/gx_music.js"></script>
   </body>

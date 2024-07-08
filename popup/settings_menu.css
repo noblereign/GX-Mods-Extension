@@ -151,6 +151,10 @@ html, body {
   font-weight: 600;
 }
 
+svg {
+  pointer-events: none;
+}
+
 hr {
   margin: 8px -8px 4px;
   border-top: 1px solid;

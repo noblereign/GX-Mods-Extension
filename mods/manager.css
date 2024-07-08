@@ -98,6 +98,37 @@ html, body {
   -webkit-tap-highlight-color: transparent
 }
 
+.modIcon {
+  aspect-ratio: 1/1;
+  height: 64px;
+  clip-path: polygon(evenodd, 0px 6.82px, 0.02px 6.52px, 0.1px 6.22px, 0.22px 5.92px, 0.38px 5.66px, 0.58px 5.42px, 5.42px 0.58px, 5.66px 0.38px, 5.92px 0.22px, 6.22px 0.1px, 6.52px 0.02px, 6.82px 0px, calc(100% - 2px) 0px, calc(100% - 1.38px) 0.1px, calc(100% - 0.82px) 0.38px, calc(100% - 0.38px) 0.82px, calc(100% - 0.1px) 1.38px, 100% 2px, 100% calc(100% - 6.82px), calc(100% - 0.02px) calc(100% - 6.52px), calc(100% - 0.1px) calc(100% - 6.22px), calc(100% - 0.22px) calc(100% - 5.92px), calc(100% - 0.38px) calc(100% - 5.66px), calc(100% - 0.58px) calc(100% - 5.42px), calc(100% - 5.42px) calc(100% - 0.58px), calc(100% - 5.66px) calc(100% - 0.38px), calc(100% - 5.92px) calc(100% - 0.22px), calc(100% - 6.22px) calc(100% - 0.1px), calc(100% - 6.52px) calc(100% - 0.02px), calc(100% - 6.82px) 100%, 2px 100%, 1.38px calc(100% - 0.1px), 0.82px calc(100% - 0.38px), 0.38px calc(100% - 0.82px), 0.1px calc(100% - 1.38px), 0px calc(100% - 2px));
+  background-color: hsl(var(--gx-no-08))
+}
+
+.modIconContainer {
+  aspect-ratio: 1/1;
+  height: 66px;
+  clip-path: polygon(evenodd, 0px 6.82px, 0.02px 6.52px, 0.1px 6.22px, 0.22px 5.92px, 0.38px 5.66px, 0.58px 5.42px, 5.42px 0.58px, 5.66px 0.38px, 5.92px 0.22px, 6.22px 0.1px, 6.52px 0.02px, 6.82px 0px, calc(100% - 2px) 0px, calc(100% - 1.38px) 0.1px, calc(100% - 0.82px) 0.38px, calc(100% - 0.38px) 0.82px, calc(100% - 0.1px) 1.38px, 100% 2px, 100% calc(100% - 6.82px), calc(100% - 0.02px) calc(100% - 6.52px), calc(100% - 0.1px) calc(100% - 6.22px), calc(100% - 0.22px) calc(100% - 5.92px), calc(100% - 0.38px) calc(100% - 5.66px), calc(100% - 0.58px) calc(100% - 5.42px), calc(100% - 5.42px) calc(100% - 0.58px), calc(100% - 5.66px) calc(100% - 0.38px), calc(100% - 5.92px) calc(100% - 0.22px), calc(100% - 6.22px) calc(100% - 0.1px), calc(100% - 6.52px) calc(100% - 0.02px), calc(100% - 6.82px) 100%, 2px 100%, 1.38px calc(100% - 0.1px), 0.82px calc(100% - 0.38px), 0.38px calc(100% - 0.82px), 0.1px calc(100% - 1.38px), 0px calc(100% - 2px));
+  margin-right: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: hsl(var(--gx-no-59));
+  background: linear-gradient(45deg, hsl(var(--gx-no-12)) 0%, hsl(var(--gx-no-59)) 100%);
+}
+
+.infoContainer {
+  display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+  flex-basis: 75%
+}
+
+.zipPreview > .modItem > .infoContainer {
+  flex-basis: initial !important;
+}
+
+
 h1.modListTitle {
   font-size: 18px;
 }
@@ -493,25 +524,27 @@ body > .buttonsContainer {
   user-select: none;
 }
 
-#finish {
+.finishButton {
   gap: 0px;
-  width: 78px;
   background-color: hsl(var(--gx-accent-l-80));
   border-color: hsl(var(--gx-accent-l-60));
   color: hsl(var(--gx-accent-100-contrast));
   font-weight: 700;
 }
-#finish:disabled {
+.finishButton:disabled {
   cursor: not-allowed;
   opacity: .4;
 }
-#finish:not(:disabled):hover {
+.finishButton:not(:disabled):hover {
   background-image: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1));
 }
-#finish:not(:disabled):active {
+.finishButton:not(:disabled):active {
   background-image: linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.2));
 }
 
+#finish {
+  width: 78px;
+}
 
 .modal {
   position: fixed; /* Stay in place */
@@ -567,12 +600,14 @@ body > .buttonsContainer {
 	margin-top: 8px;
 	display: flex;
 	flex-direction: row;
-	flex-wrap: nowrap;
+	flex-wrap: wrap;
 	justify-content: flex-end;
 	gap: .5em;
 	align-items: center;
 	height: 32px;
-	width: 10em;
+	width: 13em;
+  align-content: center;
+  flex-basis: 30%;
 }
 
 .modalContainer > .buttonsContainer{
@@ -586,6 +621,7 @@ body > .buttonsContainer {
 
 .invalidItem {
   color: #ff7392 !important;
+  white-space: preserve;
 }
 
 .subtitle {
@@ -646,6 +682,10 @@ label[for="modname"]:focus-within {
   min-width: 94px;
   margin-bottom: 0px;
   width:20%
+}
+
+svg {
+  pointer-events: none;
 }
 
 input[type="text"] {
@@ -757,7 +797,7 @@ li.sfxPreviewItem {
 	align-items: center;
 }
 
-#filesButton, #sfxFilesButton {
+#filesButton, #sfxFilesButton, #zipButton {
   align-items: center;
   background-color: hsl(var(--gx-no-16));
   border: 1px solid hsl(var(--gx-no-32));
@@ -779,10 +819,32 @@ li.sfxPreviewItem {
   margin-bottom: 12px;
 }
 
-#filesButton:hover, #sfxFilesButton:hover {
+#filesButton:hover, #sfxFilesButton:hover, #zipButton:hover {
   background-color: hsl(var(--gx-no-20));
 }
 
-#filesButton:active, #sfxFilesButton:active {
+#filesButton:active, #sfxFilesButton:active, #zipButton:active {
+  background-image: linear-gradient(rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.06));
+}
+
+#iconButton {
+  cursor: pointer;
+}
+
+.iconButtonOverlay {
+  pointer-events: none;
+  aspect-ratio: 1/1;
+  height: 64px;
+  clip-path: polygon(evenodd, 0px 6.82px, 0.02px 6.52px, 0.1px 6.22px, 0.22px 5.92px, 0.38px 5.66px, 0.58px 5.42px, 5.42px 0.58px, 5.66px 0.38px, 5.92px 0.22px, 6.22px 0.1px, 6.52px 0.02px, 6.82px 0px, calc(100% - 2px) 0px, calc(100% - 1.38px) 0.1px, calc(100% - 0.82px) 0.38px, calc(100% - 0.38px) 0.82px, calc(100% - 0.1px) 1.38px, 100% 2px, 100% calc(100% - 6.82px), calc(100% - 0.02px) calc(100% - 6.52px), calc(100% - 0.1px) calc(100% - 6.22px), calc(100% - 0.22px) calc(100% - 5.92px), calc(100% - 0.38px) calc(100% - 5.66px), calc(100% - 0.58px) calc(100% - 5.42px), calc(100% - 5.42px) calc(100% - 0.58px), calc(100% - 5.66px) calc(100% - 0.38px), calc(100% - 5.92px) calc(100% - 0.22px), calc(100% - 6.22px) calc(100% - 0.1px), calc(100% - 6.52px) calc(100% - 0.02px), calc(100% - 6.82px) 100%, 2px 100%, 1.38px calc(100% - 0.1px), 0.82px calc(100% - 0.38px), 0.38px calc(100% - 0.82px), 0.1px calc(100% - 1.38px), 0px calc(100% - 2px));
+  background-color: rgba(0,0,0,0);
+  z-index: 2;
+  position: absolute;
+}
+
+#iconButton:hover > .iconButtonOverlay {
+  background-color: rgba(255, 255, 255, 0.047058823529411764);
+}
+
+#iconButton:active > .iconButtonOverlay {
   background-image: linear-gradient(rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.06));
 }

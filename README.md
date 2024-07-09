@@ -76,7 +76,7 @@
  
  When you start craving some more, you can make your own mods by opening the extension popup and scrolling to the bottom. There'll be a "Mods" button. Click that and you'll be good to go!
  
- Alternatively, you can *install real Opera GX mods* by heading to the [GX Store](https://store.gx.me/mods/). Only sounds, though. No themes or wallpapers (yet).
+ Alternatively, you can *install real Opera GX mods* by heading to the [GX Store](https://store.gx.me/mods/). Most mods are supported, but you can't install wallpapers, shaders, or game strips. Wallpapers may come in a future update, not sure about the other two.
 
 # Uninstalling the extension
  Warning you now! ***Before uninstalling/unloading the extension, please be sure to set all of your selected tracks to "None/No music"!*** Otherwise you will leak some memory.

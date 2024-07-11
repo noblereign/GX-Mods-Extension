@@ -2550,8 +2550,6 @@ function shouldPlayAddressBarSound(requestInfo) {
                 }
             }
         }
-    } else {
-        console.log(requestInfo)
     }
     return false
 }

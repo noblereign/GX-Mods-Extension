@@ -33,16 +33,28 @@
 
   <div id="popup-content">
     <div class="loadingOverlay"></div>
-    <div class="consentOverlay disabled">
-      <span id="consentTitle">Consent required</span>
+    <div class="consentOverlay disabled" id="jsDelivr">
+      <span class="consentTitle">Consent required</span>
       <br>
-      <span id="consentDesc">Enabling this option will allow GXM to download a list of shopping websites from jsDelivr on browser startup.<br>Do you wish to continue?</span>
+      <span class="consentDesc">Enabling this option will allow GXM to download a list of shopping websites from jsDelivr on browser startup.<br>Do you wish to continue?</span>
       <br>
       <div class="buttonsContainer">
         <button class="gxButton" id="cancel" draggable="false">Cancel</button>
         <button class="gxButton importantButton" id="consent" draggable="false">Enable</button>
       </div>
     </div>
+
+    <div class="consentOverlay disabled" id="proxyPermission">
+      <span class="consentTitle">Consent required</span>
+      <br>
+      <span class="consentDesc">This option works by detecting autocomplete requests from your default search engine. You'll need to grant GXM the '<code>proxy</code>' and '<code>search</code>' permissions, as well as have search suggestions enabled in your browser.<br><br>It won't be perfect, but this is the only way to detect address bar typing without making you do extra steps like typing in a keyword.<br><br><b>None of your web requests will actually be proxied anywhere, everything is handled completely locally.</b><br><br>Do you wish to continue?</span>
+      <br>
+      <div class="buttonsContainer">
+        <button class="gxButton" id="cancel_proxy" draggable="false">Cancel</button>
+        <button class="gxButton importantButton" id="consent_proxy" draggable="false">Enable</button>
+      </div>
+    </div>
+
     <span id="optionsTitle">Background music</span>
     <hr>
     <div class="optionContainer switchContainer">
@@ -196,6 +208,13 @@
       <label for="typingOn">Enabled</label>
       <label class="switch">
         <input id="typingOn" type="checkbox">
+        <span class="toggleSwitch round"></span>
+      </label>
+    </div>
+    <div class="optionContainer switchContainer">
+      <label for="allowProxy">Detect in address bar</label>
+      <label class="switch">
+        <input id="allowProxy" type="checkbox">
         <span class="toggleSwitch round"></span>
       </label>
     </div>

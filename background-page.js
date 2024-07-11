@@ -2402,6 +2402,9 @@ let lastSubdomain = null
 let playSoundsTimer = null
 
 let blacklistedSubdomains = [ // best-effort attempt to make possible "tracking" subdomains not trigger address bar sounds
+    "version",
+    "update",
+    "check",
     "analytic",
     "data",
     "stat",
@@ -2434,7 +2437,8 @@ let blacklistedSubdomains = [ // best-effort attempt to make possible "tracking"
 ]
 
 function shouldPlayAddressBarSound(requestInfo) {
-    if (cachedSettings.sfxKeyboard && cachedSettings.sfxAddressBar) {
+    let fromBrowser = ((requestInfo.originUrl === undefined) && (requestInfo.documentUrl === undefined) && (requestInfo.type === "xmlhttprequest" || requestInfo.type === "main_frame") && (requestInfo.method === "GET"))
+    if (fromBrowser && cachedSettings.sfxKeyboard && cachedSettings.sfxAddressBar) {
         if (((Date.now() - lastTyped) > 100) && ((Date.now() - lastUnfocused) > 85)) {
             let match = false
             let hostMatch = false
@@ -2476,8 +2480,12 @@ function shouldPlayAddressBarSound(requestInfo) {
                                     }
                                 }
                             }
-    
-                            if (lastURL) {
+                            
+                            if (requestInfo.type === "main_frame") {
+                                if (!playSoundsTimer) {
+                                    hasNavigated = true
+                                }
+                            } else if (lastURL) {
                                 if ((lastURL.pathname == urlData.pathname) && (lastSubdomain == subdomain)) {
                                     match = true
                                 } else if (!playSoundsTimer) { // Subdomain or path changed, it's likely the user has navigated to the website
@@ -2542,6 +2550,8 @@ function shouldPlayAddressBarSound(requestInfo) {
                 }
             }
         }
+    } else {
+        console.log(requestInfo)
     }
     return false
 }

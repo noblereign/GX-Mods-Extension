@@ -4,7 +4,8 @@ document.documentElement.style.setProperty('--scrollbar-width', (window.innerWid
 const MOD_DATABASE_KEY = "GXMusicMods"
 
 const loadingShimmer = document.querySelector(".loadingOverlay")
-const consentForm = document.querySelector(".consentOverlay")
+const consentForm = document.getElementById("jsDelivr")
+const consentOptionalProxy = document.getElementById("proxyPermission")
 
 const enabledBox = document.getElementById('enabled');
 const muteAutoBox = document.getElementById('muteAuto');
@@ -17,9 +18,11 @@ var volumeSlider = document.getElementById('volume');
 var trackSelector = document.getElementById('track-picker');
 
 let consentedToJSD = false;
-
+let consentedToProxy = false;
 
 const SFXkeyboardBox = document.getElementById('typingOn');
+const SFXkeyboardAddressBox = document.getElementById('allowProxy');
+
 const SFXtabBox = document.getElementById('tabsOn');
 const SFXswitchesBox = document.getElementById('switchesOn');
 
@@ -286,13 +289,15 @@ function saveOptions() {
 
         keyboardName: KeyboardSelector.value,
         sfxKeyboard: SFXkeyboardBox.checked,
+        sfxAddressBar: SFXkeyboardAddressBox.checked,
         keyboardVolume: KeyboardVolumeSlider.value,
 
         themeName: ThemeSelector.value,
         lightTheme: lightThemeBox.checked,
 
         muteShopping: muteShoppingBox.checked,
-        consentedToJSD: consentedToJSD
+        consentedToJSD: consentedToJSD,
+        consentedToProxy: consentedToProxy,
     });
 }
 
@@ -306,6 +311,7 @@ async function restoreOptions() {
 
     async function setCurrentChoice(result) {
         consentedToJSD = (typeof result.consentedToJSD == "undefined") ? false : result.consentedToJSD;
+        consentedToProxy = (typeof result.consentedToProxy == "undefined") ? false : result.consentedToProxy;
         // MUSIC
         trackSelector.value = result.trackName || "off";
         enabledBox.checked = (typeof result.enabled == "undefined") ? true : result.enabled;
@@ -332,6 +338,7 @@ async function restoreOptions() {
         // SOUND EFFECTS
         sfxSelector.value = result.sfxName || "off";
         SFXkeyboardBox.checked = (typeof result.sfxKeyboard == "undefined") ? false : result.sfxKeyboard;
+        SFXkeyboardAddressBox.checked = (typeof result.sfxAddressBar == "undefined") ? false : result.sfxAddressBar;
         SFXtabBox.checked = (typeof result.sfxTabs == "undefined") ? false : result.sfxTabs;
         SFXswitchesBox.checked = (typeof result.sfxPage == "undefined") ? false : result.sfxPage;
         SFXvolumeSlider.value = result.sfxVolume || 50;
@@ -541,6 +548,21 @@ muteShoppingBox.addEventListener('change', (event) => {
         saveOptions()
     }
 })
+
+SFXkeyboardAddressBox.addEventListener('change', (event) => {
+    if (SFXkeyboardAddressBox.checked) {
+        if (consentedToProxy) {
+            consentedToProxy = true
+            saveOptions()
+        } else {
+            SFXkeyboardAddressBox.checked = false
+            consentOptionalProxy.setAttribute("enabled", "");
+        }
+    } else {
+        saveOptions()
+    }
+})
+
 SFXlinksBox.addEventListener('change', (event) => {
     saveOptions()
 })
@@ -589,6 +611,31 @@ iConsent.onclick = function() {
     consentedToJSD = true
     saveOptions()
 }
+
+
+const iDontConsent_Proxy = document.querySelector("#cancel_proxy")
+const iConsent_Proxy = document.querySelector("#consent_proxy")
+
+const addressBarPermissions = {
+    permissions: ["proxy", "search"]
+};
+
+iDontConsent_Proxy.onclick = function() {
+    consentOptionalProxy.removeAttribute("enabled");
+}
+iConsent_Proxy.onclick = async function() {
+    console.log("Requesting permissions...")
+    const response = await browser.permissions.request(addressBarPermissions);
+    if (response) {
+        console.log("Permissons gotten");
+        console.log(response)
+        consentOptionalProxy.removeAttribute("enabled");
+        SFXkeyboardAddressBox.checked = true
+        consentedToProxy = true
+        saveOptions()
+    }
+}
+
 
 function sendButtonClickedEvent(event) {
     let element = event.target;

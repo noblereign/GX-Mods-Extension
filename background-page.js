@@ -70,6 +70,7 @@ const cachedSettings = {
     sfxUpdates: false,
 
     sfxKeyboard: false,
+    sfxAddressBar: false,
     keyboardVolume: 50,
 
     sfxLinks: false,
@@ -79,6 +80,8 @@ const cachedSettings = {
 
     muteShopping: false
 }
+
+let searchEngines = [] // Cached later
 
 let cTrack = "off"
 let cSounds = "off"
@@ -884,7 +887,12 @@ function isEmptyObject(value) {
     }
   
     return isEmpty(value);
-  }
+}
+
+let lastTyped = 0
+let currentTabFocused = true
+let currentWindowId = 0
+let lastUnfocused = 0
 
 async function onExtensionMessage(message, sender) {
     if ((typeof message === 'object') && (message != null)) {
@@ -1212,26 +1220,31 @@ async function onExtensionMessage(message, sender) {
             playSound(currentKeyboardSounds.TYPING_SPACE ? currentKeyboardSounds.TYPING_SPACE : [], KeyboardGainNode);
         }
         level += 1;
+        lastTyped = Date.now();
     } else if (message.startsWith('bkspdown')) {
         if (cachedSettings.sfxKeyboard) {
             KeyboardGainNode.gain.value = (cachedSettings.keyboardVolume/100);
             playSound(currentKeyboardSounds.TYPING_BACKSPACE ? currentKeyboardSounds.TYPING_BACKSPACE : [], KeyboardGainNode);
         }
         level += 1;
+        lastTyped = Date.now();
     } else if (message.startsWith('enterdown')) {
         if (cachedSettings.sfxKeyboard) {
             KeyboardGainNode.gain.value = (cachedSettings.keyboardVolume/100);
             playSound(currentKeyboardSounds.TYPING_ENTER ? currentKeyboardSounds.TYPING_ENTER : [], KeyboardGainNode);
         }
         level += 1;
+        lastTyped = Date.now();
     } else if (message.startsWith('keydown_silent')) {
         level += 1;
+        lastTyped = Date.now();
     } else if (message.startsWith('keydown')) {
         if (cachedSettings.sfxKeyboard) {
             KeyboardGainNode.gain.value = (cachedSettings.keyboardVolume/100);
             playSound(currentKeyboardSounds.TYPING_LETTER ? currentKeyboardSounds.TYPING_LETTER : [], KeyboardGainNode);
         }
         level += 1;
+        lastTyped = Date.now();
     } else if (message.startsWith('buttonpress')) {
         if (cachedSettings.sfxButtons) {
             SFXGainNode.gain.value = (cachedSettings.sfxVolume/100);
@@ -1275,6 +1288,24 @@ async function onExtensionMessage(message, sender) {
                 console.warn(err)
             })
         },100);
+    } else if (message.startsWith('focus=')) {
+        console.log("Focus changed event")
+        if (sender.tab) {
+            console.log("Tab exists")
+            let currentTab = sender.tab
+            if (currentTab.windowId == currentWindowId) {
+                console.log("Window is same")
+                if (currentTab.active) {
+                    console.log("Tab is active")
+                    var newFocus = message.replace("focus=","")
+                    currentTabFocused = newFocus == "true"
+                    if (newFocus != "true") {
+                        lastUnfocused = Date.now()
+                    }
+                    console.log(`New focus: ${currentTabFocused}`)
+                }
+            }
+        }
     } else {
         console.log("[GXM] weird message received:",message)     
     }
@@ -1298,6 +1329,13 @@ browser.tabs.onCreated.addListener((tab) => {
     }
     level += 10;
     updateLevels()
+
+    browser.tabs.query({ currentWindow: true, active: true }).then(function(tabs){
+        if (tabs && tabs[0] && tabs[0].url.includes("about:")) {
+            currentTabFocused = false
+            lastUnfocused = Date.now()
+        }
+    })
 })
 browser.tabs.onRemoved.addListener((tab, removeInfo) => {
     if (!removeInfo.isWindowClosing) {
@@ -1306,7 +1344,27 @@ browser.tabs.onRemoved.addListener((tab, removeInfo) => {
             playSound(currentBrowserSounds.TAB_CLOSE ? currentBrowserSounds.TAB_CLOSE : [], SFXGainNode);
         }
     }
+
+    browser.tabs.query({ currentWindow: true, active: true }).then(function(tabs){
+        if (tabs && tabs[0] && tabs[0].url.includes("about:")) {
+            currentTabFocused = false
+            lastUnfocused = Date.now()
+        }
+    })
 })
+
+function handleActivated(activeInfo) {
+    if (activeInfo.windowId == currentWindowId) {
+        browser.tabs.query({ currentWindow: true, active: true }).then(function(tabs){
+            if (tabs && tabs[0] && tabs[0].url.includes("about:")) {
+                currentTabFocused = false
+            }
+        })
+    }
+}
+  
+browser.tabs.onActivated.addListener(handleActivated);
+  
 
 if (typeof browser.windows !== "undefined") {
     browser.windows.onRemoved.addListener((windowId) => {
@@ -1317,8 +1375,13 @@ if (typeof browser.windows !== "undefined") {
     });
 
     browser.windows.onFocusChanged.addListener((windowId) => {
+        currentWindowId = windowId
         mutedDueToFocus = (windowId == browser.windows.WINDOW_ID_NONE)
     }); 
+
+    browser.windows.getCurrent().then(function(currentWindow) {
+        currentWindowId = currentWindow.id
+    })
 }
 
 
@@ -1683,6 +1746,25 @@ async function loadKeyboardSounds(track) {
     console.log("[GXM] All keyboard sounds loaded.")
 
     modData = null;
+
+    const hasSearchPermission = (cachedSettings.consentedToProxy && cachedSettings.sfxAddressBar && await browser.permissions.contains({permissions: ["search", "proxy"]}))
+    if (hasSearchPermission) {
+        browser.search.get().then(
+            function(result) {
+                result.sort(function(a, b) {
+                    if (a.isDefault) {
+                        return -1
+                    } else {
+                        return 0
+                    }
+                })
+                searchEngines = result
+                console.log("Search engines fetched.")
+                console.log(searchEngines)
+            }
+        )
+    }
+
     return true
 }
 
@@ -2026,6 +2108,7 @@ browser.storage.local.get().then(
         cachedSettings.sfxUpdates = (typeof result.sfxUpdates == "undefined") ? false : result.sfxUpdates;
 
         cachedSettings.sfxKeyboard = (typeof result.sfxKeyboard == "undefined") ? false : result.sfxKeyboard;
+        cachedSettings.sfxAddressBar = (typeof result.sfxAddressBar == "undefined") ? false : result.sfxAddressBar;
         cachedSettings.keyboardVolume = (typeof result.keyboardVolume == "undefined") ? 50 : result.keyboardVolume;
 
         cachedSettings.lightTheme = (typeof result.lightTheme == "undefined") ? ((await getPreferredColorScheme() === "light") || false) : result.lightTheme;
@@ -2036,10 +2119,17 @@ browser.storage.local.get().then(
         cachedSettings.sfxLinks = (typeof result.sfxLinks == "undefined") ? false : result.sfxLinks;
         cachedSettings.sfxAltSwitch = (typeof result.sfxAltSwitch == "undefined") ? false : result.sfxAltSwitch;
 
+        cachedSettings.consentedToJSD = (typeof result.consentedToJSD == "undefined") ? false : result.consentedToJSD;
+        cachedSettings.consentedToProxy = (typeof result.consentedToProxy == "undefined") ? false : result.consentedToProxy;
+
         if (result.consentedToJSD && result.shoppingMute) {
             initShoppingMutes()
         }
-        
+
+        if (result.consentedToProxy && result.sfxAddressBar) {
+            initAddressBarListener()
+        }
+
         loadSounds(result.trackName || 'off')
         loadKeyboardSounds(result.keyboardName || 'off')
         loadBrowserSounds(result.sfxName || 'off')
@@ -2051,11 +2141,18 @@ browser.storage.local.get().then(
 );
 
 function updateSettings(changes) {
+    console.log("Settings were updated, caching changes")
     const changedItems = Object.keys(changes);
 
     for (const item of changedItems) {
         if (cachedSettings.hasOwnProperty(item)) {
             cachedSettings[item] = changes[item].newValue;
+
+            if (item == "sfxAddressBar" || item == "consentedToProxy") {
+                if (changes[item].newValue == true) {
+                    initAddressBarListener()
+                }
+            }
         }
     }
 }
@@ -2138,7 +2235,6 @@ function initShoppingMutes() {
         })
     }
 }
-
 
 browser.runtime.onSuspend.addListener(async function () {
     sourceNodes.forEach(sourceNode => sourceNode.stop());
@@ -2298,4 +2394,231 @@ async function handleUpdated(updateInfo) {
 }
   
 browser.theme.onUpdated.addListener(handleUpdated);
-  
+
+let lastLength = 0
+let lastMove = ""
+let lastURL = null
+let lastSubdomain = null
+let playSoundsTimer = null
+
+let blacklistedSubdomains = [ // best-effort attempt to make possible "tracking" subdomains not trigger address bar sounds
+    "analytic",
+    "data",
+    "stat",
+    "metric",
+    "insight",
+    "report",
+    "tracking",
+    "monitor",
+    "logs",
+    "dashboard",
+    "event",
+    "performance",
+    "usage",
+    "app",
+    "seo",
+    "click",
+    "visit",
+    "conversion",
+    "heatmap",
+    "realtime",
+    "session",
+    "behavior",
+    "visitor",
+    "engagement",
+    "audience",
+    "improving",
+    "traffic",
+    "activity",
+    "analysis"
+]
+
+function shouldPlayAddressBarSound(requestInfo) {
+    if (cachedSettings.sfxKeyboard && cachedSettings.sfxAddressBar) {
+        if (((Date.now() - lastTyped) > 100) && ((Date.now() - lastUnfocused) > 85)) {
+            let match = false
+            let hostMatch = false
+            let hasNavigated = false
+
+            let urlData = new URL(requestInfo.url)
+            let hostname = urlData.hostname.toLowerCase()
+
+            for (const engine of searchEngines) {
+                let fromCorrectHost = hostname.includes(engine.name.toLowerCase().split(" ")[0])
+                if (fromCorrectHost) {
+                    hostMatch = true;
+                    let hasSearchQuery = urlData.search || requestInfo.url.includes("?q=") || requestInfo.url.includes("&q=") || requestInfo.url.includes("?query=") || requestInfo.url.includes("&query=") || requestInfo.url.includes("?s=") || requestInfo.url.includes("&s=") || requestInfo.url.includes("?search=") || requestInfo.url.includes("&search=")
+                    if (hasSearchQuery) {
+                        let subdomain = "null"
+                        let split = urlData.hostname.toLowerCase().split('.')
+                        if (split.length >= 3) {
+                            subdomain = split[0].replace(/^\/\/|^.*?:(\/\/)?/, '');
+                        } else {
+                            subdomain = "www"
+                        }
+
+                        let blacklisted = false
+                        for (const str of blacklistedSubdomains) {
+                            if (subdomain.includes(str)) {
+                                blacklisted = true;
+                                break
+                            }
+                        }
+
+                        if (!blacklisted) {
+                            if (lastURL) {
+                                if (playSoundsTimer) {
+                                    if ((Date.now() - playSoundsTimer) > 3000) {
+                                        lastLength = 0;
+                                        lastURL = null;
+                                        lastSubdomain = null;
+                                        playSoundsTimer = null;
+                                    }
+                                }
+                            }
+    
+                            if (lastURL) {
+                                if ((lastURL.pathname == urlData.pathname) && (lastSubdomain == subdomain)) {
+                                    match = true
+                                } else if (!playSoundsTimer) { // Subdomain or path changed, it's likely the user has navigated to the website
+                                    hasNavigated = true
+                                }
+                            } else {
+                                lastURL = urlData
+                                lastSubdomain = subdomain
+                                match = true
+                            }
+                            break
+                        }
+                    }
+                }
+            }
+            
+            if (match) {
+                browser.windows.getCurrent().then(function(window) {
+                    if (window.focused) {
+                        if (!currentTabFocused) {
+                            KeyboardGainNode.gain.value = (cachedSettings.keyboardVolume/100);
+                            if (lastLength < requestInfo.url.length) {
+                                playSound(currentKeyboardSounds.TYPING_LETTER ? currentKeyboardSounds.TYPING_LETTER : [], KeyboardGainNode);
+                                lastMove = "TYPE"
+                            } else if (lastLength > requestInfo.url.length) {
+                                playSound(currentKeyboardSounds.TYPING_BACKSPACE ? currentKeyboardSounds.TYPING_BACKSPACE : [], KeyboardGainNode);
+                                lastMove = "BKSP"
+                            } else {
+                                playSound(lastMove == "TYPE" ? (currentKeyboardSounds.TYPING_SPACE ? currentKeyboardSounds.TYPING_SPACE : []) : (currentKeyboardSounds.TYPING_BACKSPACE ? currentKeyboardSounds.TYPING_BACKSPACE : []), KeyboardGainNode);
+                            }
+                            level += 1;
+                            lastLength = requestInfo.url.length
+                        } else {
+                            lastLength = 0;
+                            lastURL = null;
+                            lastSubdomain = null;
+                            playSoundsTimer = null;
+                        }
+                    }
+                })
+            } else if (hostMatch && hasNavigated) {
+                browser.windows.getCurrent().then(function(window) {
+                    if (window.focused) {
+                        if (!currentTabFocused) {
+                            if (cachedSettings.sfxKeyboard) {
+                                KeyboardGainNode.gain.value = (cachedSettings.keyboardVolume/100);
+                                playSound(currentKeyboardSounds.TYPING_ENTER ? currentKeyboardSounds.TYPING_ENTER : [], KeyboardGainNode);
+                            }
+                            level += 1;
+                            playSoundsTimer = Date.now();
+                        } else {
+                            lastLength = 0;
+                            lastURL = null;
+                            lastSubdomain = null;
+                            playSoundsTimer = null;
+                        }
+                    }
+                })
+            } else if (hostMatch) {
+                if ((Date.now() - playSoundsTimer) <= 3000) {
+                    playSoundsTimer = Date.now();
+                }
+            }
+        }
+    }
+    return false
+}
+
+function handleProxyRequest(requestInfo) { // never actually proxies anything, only used for sounds
+    shouldPlayAddressBarSound(requestInfo)
+    return { type: "direct" };
+}
+
+let lastAbleToInit = true
+function initAddressBarListener() {
+    console.log("initing address bar listener")
+    browser.permissions.contains({permissions: ["search", "proxy"]}).then(function(hasSearchPermission) {
+        if (hasSearchPermission) {
+            console.log("search permissions detected")
+
+            function tryProxyListener() {
+                console.log("TRYING PROXY LISTENER!");
+                console.log(cachedSettings.consentedToProxy);
+                console.log(cachedSettings.sfxAddressBar);
+
+                if (cachedSettings.consentedToProxy && cachedSettings.sfxAddressBar) {
+                    console.log("adding proxy listener")
+                    browser.proxy.onRequest.addListener(handleProxyRequest, {
+                        urls: ["*://*/*"],
+                    }); 
+                } else {
+                    console.log("removing listener, no longer enabled")
+                    browser.proxy.onRequest.removeListener(handleProxyRequest)
+                }
+            }
+
+            if (searchEngines === undefined || searchEngines.length == 0) {
+                browser.search.get().then(
+                    function(result) {
+                        result.sort(function(a, b) {
+                            if (a.isDefault) {
+                                return -1
+                            } else {
+                                return 0
+                            }
+                        })
+                        searchEngines = result
+                        console.log("Search engines fetched.")
+                        tryProxyListener()
+                    }
+                )
+            } else {
+                tryProxyListener()
+            }
+        } else {
+            console.log("lost permissions, removing consent and detect address bar")
+            lastAbleToInit = false
+            if (cachedSettings.consentedToProxy) {
+                browser.storage.local.set({
+                    sfxAddressBar: false,
+                    consentedToProxy: false
+                });
+            }
+        }
+    })
+}
+
+async function permissionsAdded(addedPermissions) {
+    if (addedPermissions.permissions.includes("search") || addedPermissions.permissions.includes("proxy")) {
+        browser.permissions.contains({permissions: ["search", "proxy"]}).then(function(hasSearchPermission) {
+            if (hasSearchPermission) {
+                console.log("Force setting to true, as we weren't able to init before. Workaround for popup appearing behind settings menu")
+                browser.storage.local.set({
+                    sfxAddressBar: true,
+                    consentedToProxy: true
+                });
+            }
+        })
+    }
+}
+
+browser.permissions.onAdded.addListener(permissionsAdded);
+browser.permissions.onRemoved.addListener(initAddressBarListener);
+

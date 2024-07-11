@@ -78,7 +78,8 @@ html, body {
   bottom:0;
   left:0;
   right:0;
-  background-color:rgba(17, 14, 24,.8);
+  background-color:rgba(17, 14, 24,.6);
+  backdrop-filter: blur(8px);
   z-index:1000;
   text-align: center;
 	display: flex;
@@ -108,12 +109,12 @@ html, body {
 	height: 32px;
 	width: 30%;
 }
-#consentTitle {
+.consentTitle {
 	font-weight: 600;
 	text-align: center;
 	font-size: 1.5em;
 }
-#consentDesc {
+.consentDesc {
   text-align: center;
   width: 95%;
 }

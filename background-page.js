@@ -892,7 +892,14 @@ function isEmptyObject(value) {
 let lastTyped = 0
 let currentTabFocused = true
 let currentWindowId = 0
+let currentTabId = 0
 let lastUnfocused = 0
+
+browser.tabs.query({ currentWindow: true, active: true }).then(function(tabs){
+    if (tabs && tabs[0]) {
+        currentTabId = tabs[0].id
+    }
+})
 
 async function onExtensionMessage(message, sender) {
     if ((typeof message === 'object') && (message != null)) {
@@ -1289,20 +1296,16 @@ async function onExtensionMessage(message, sender) {
             })
         },100);
     } else if (message.startsWith('focus=')) {
-        console.log("Focus changed event")
         if (sender.tab) {
-            console.log("Tab exists")
             let currentTab = sender.tab
             if (currentTab.windowId == currentWindowId) {
-                console.log("Window is same")
                 if (currentTab.active) {
-                    console.log("Tab is active")
                     var newFocus = message.replace("focus=","")
                     currentTabFocused = newFocus == "true"
+                    currentTabId = currentTab.id
                     if (newFocus != "true") {
                         lastUnfocused = Date.now()
                     }
-                    console.log(`New focus: ${currentTabFocused}`)
                 }
             }
         }
@@ -1315,8 +1318,21 @@ async function onExtensionMessage(message, sender) {
 
 browser.runtime.onMessage.addListener(onExtensionMessage);
 
-async function checkTabAudible() {
-    var tabs = await browser.tabs.query({audible: true})
+let navigatedYet = true
+async function checkTabAudible(tabId, changeInfo, tabInfo) {
+    if ((!currentTabFocused) && (currentTabId == tabId) && (changeInfo.status) && (changeInfo.status === "loading")) {
+        if (!navigatedYet) {
+            navigatedYet = true
+            if (cachedSettings.sfxKeyboard && cachedSettings.sfxAddressBar) {
+                KeyboardGainNode.gain.value = (cachedSettings.keyboardVolume/100);
+                playSound(currentKeyboardSounds.TYPING_ENTER ? currentKeyboardSounds.TYPING_ENTER : [], KeyboardGainNode);
+            }
+            level += 1;
+            playSoundsTimer = Date.now();
+        }
+    }
+
+    var tabs = await browser.tabs.query({audible: true, muted: false})
     muted = tabs.length
 }
 browser.tabs.onUpdated.addListener(checkTabAudible)
@@ -1333,6 +1349,7 @@ browser.tabs.onCreated.addListener((tab) => {
     browser.tabs.query({ currentWindow: true, active: true }).then(function(tabs){
         if (tabs && tabs[0] && tabs[0].url.includes("about:")) {
             currentTabFocused = false
+            currentTabId = tabs[0].id
             lastUnfocused = Date.now()
         }
     })
@@ -1348,6 +1365,7 @@ browser.tabs.onRemoved.addListener((tab, removeInfo) => {
     browser.tabs.query({ currentWindow: true, active: true }).then(function(tabs){
         if (tabs && tabs[0] && tabs[0].url.includes("about:")) {
             currentTabFocused = false
+            currentTabId = tabs[0].id
             lastUnfocused = Date.now()
         }
     })
@@ -1358,6 +1376,7 @@ function handleActivated(activeInfo) {
         browser.tabs.query({ currentWindow: true, active: true }).then(function(tabs){
             if (tabs && tabs[0] && tabs[0].url.includes("about:")) {
                 currentTabFocused = false
+                currentTabId = tabs[0].id
             }
         })
     }
@@ -2436,9 +2455,12 @@ let blacklistedSubdomains = [ // best-effort attempt to make possible "tracking"
     "analysis"
 ]
 
+const TIMER_LENGTH = 500
+
 function shouldPlayAddressBarSound(requestInfo) {
     let fromBrowser = ((requestInfo.originUrl === undefined) && (requestInfo.documentUrl === undefined) && (requestInfo.type === "xmlhttprequest" || requestInfo.type === "main_frame") && (requestInfo.method === "GET"))
-    if (fromBrowser && cachedSettings.sfxKeyboard && cachedSettings.sfxAddressBar) {
+    
+    if (cachedSettings.sfxKeyboard && cachedSettings.sfxAddressBar) {
         if (((Date.now() - lastTyped) > 100) && ((Date.now() - lastUnfocused) > 85)) {
             let match = false
             let hostMatch = false
@@ -2472,11 +2494,13 @@ function shouldPlayAddressBarSound(requestInfo) {
                         if (!blacklisted) {
                             if (lastURL) {
                                 if (playSoundsTimer) {
-                                    if ((Date.now() - playSoundsTimer) > 3000) {
+                                    if ((Date.now() - playSoundsTimer) > TIMER_LENGTH) {
                                         lastLength = 0;
                                         lastURL = null;
                                         lastSubdomain = null;
                                         playSoundsTimer = null;
+                                        console.log("Timer reset")
+                                        //console.log(requestInfo)
                                     }
                                 }
                             }
@@ -2484,17 +2508,23 @@ function shouldPlayAddressBarSound(requestInfo) {
                             if (requestInfo.type === "main_frame") {
                                 if (!playSoundsTimer) {
                                     hasNavigated = true
+                                    console.log("Navigated (main_frame)")
                                 }
                             } else if (lastURL) {
                                 if ((lastURL.pathname == urlData.pathname) && (lastSubdomain == subdomain)) {
                                     match = true
+                                    console.log("Matched with last URL")
                                 } else if (!playSoundsTimer) { // Subdomain or path changed, it's likely the user has navigated to the website
                                     hasNavigated = true
+                                    console.log("Navigated (not matching)")
+                                    //console.log(requestInfo)
                                 }
-                            } else {
+                            } else if (fromBrowser) {
                                 lastURL = urlData
                                 lastSubdomain = subdomain
                                 match = true
+                                console.log("Matched with no last URL")
+                                //console.log(requestInfo)
                             }
                             break
                         }
@@ -2503,50 +2533,59 @@ function shouldPlayAddressBarSound(requestInfo) {
             }
             
             if (match) {
-                browser.windows.getCurrent().then(function(window) {
-                    if (window.focused) {
-                        if (!currentTabFocused) {
-                            KeyboardGainNode.gain.value = (cachedSettings.keyboardVolume/100);
-                            if (lastLength < requestInfo.url.length) {
-                                playSound(currentKeyboardSounds.TYPING_LETTER ? currentKeyboardSounds.TYPING_LETTER : [], KeyboardGainNode);
-                                lastMove = "TYPE"
-                            } else if (lastLength > requestInfo.url.length) {
-                                playSound(currentKeyboardSounds.TYPING_BACKSPACE ? currentKeyboardSounds.TYPING_BACKSPACE : [], KeyboardGainNode);
-                                lastMove = "BKSP"
-                            } else {
-                                playSound(lastMove == "TYPE" ? (currentKeyboardSounds.TYPING_SPACE ? currentKeyboardSounds.TYPING_SPACE : []) : (currentKeyboardSounds.TYPING_BACKSPACE ? currentKeyboardSounds.TYPING_BACKSPACE : []), KeyboardGainNode);
-                            }
-                            level += 1;
-                            lastLength = requestInfo.url.length
-                        } else {
-                            lastLength = 0;
-                            lastURL = null;
-                            lastSubdomain = null;
-                            playSoundsTimer = null;
-                        }
-                    }
-                })
-            } else if (hostMatch && hasNavigated) {
-                browser.windows.getCurrent().then(function(window) {
-                    if (window.focused) {
-                        if (!currentTabFocused) {
-                            if (cachedSettings.sfxKeyboard) {
+                if (fromBrowser) {
+                    browser.windows.getCurrent().then(function(window) {
+                        if (window.focused) {
+                            if (!currentTabFocused) {
                                 KeyboardGainNode.gain.value = (cachedSettings.keyboardVolume/100);
-                                playSound(currentKeyboardSounds.TYPING_ENTER ? currentKeyboardSounds.TYPING_ENTER : [], KeyboardGainNode);
+                                if (lastLength < requestInfo.url.length) {
+                                    playSound(currentKeyboardSounds.TYPING_LETTER ? currentKeyboardSounds.TYPING_LETTER : [], KeyboardGainNode);
+                                    lastMove = "TYPE"
+                                } else if (lastLength > requestInfo.url.length) {
+                                    playSound(currentKeyboardSounds.TYPING_BACKSPACE ? currentKeyboardSounds.TYPING_BACKSPACE : [], KeyboardGainNode);
+                                    lastMove = "BKSP"
+                                } else {
+                                    playSound(lastMove == "TYPE" ? (currentKeyboardSounds.TYPING_SPACE ? currentKeyboardSounds.TYPING_SPACE : []) : (currentKeyboardSounds.TYPING_BACKSPACE ? currentKeyboardSounds.TYPING_BACKSPACE : []), KeyboardGainNode);
+                                }
+                                level += 1;
+                                lastLength = requestInfo.url.length
+                                navigatedYet = false
+                            } else {
+                                lastLength = 0;
+                                lastURL = null;
+                                lastSubdomain = null;
+                                playSoundsTimer = null;
+                                console.log("Reset due to unfocused")
                             }
-                            level += 1;
-                            playSoundsTimer = Date.now();
+                        }
+                    })
+                }
+            } else if (hasNavigated && fromBrowser) {
+                browser.windows.getCurrent().then(function(window) {
+                    if (window.focused) {
+                        if (!currentTabFocused) {
+                            //if (cachedSettings.sfxKeyboard) {
+                            //    KeyboardGainNode.gain.value = (cachedSettings.keyboardVolume/100);
+                            //    playSound(currentKeyboardSounds.TYPING_ENTER ? currentKeyboardSounds.TYPING_ENTER : [], KeyboardGainNode);
+                            //}
+                            //level += 1;
+                            //playSoundsTimer = Date.now();
+                            navigatedYet = true
                         } else {
                             lastLength = 0;
                             lastURL = null;
                             lastSubdomain = null;
                             playSoundsTimer = null;
+                            navigatedYet = true
+                            console.log("Reset due to unfocused, no match")
                         }
                     }
                 })
             } else if (hostMatch) {
-                if ((Date.now() - playSoundsTimer) <= 3000) {
+                if ((Date.now() - playSoundsTimer) <= TIMER_LENGTH) {
                     playSoundsTimer = Date.now();
+                    navigatedYet = true
+                    console.log("Timer expanded")
                 }
             }
         }

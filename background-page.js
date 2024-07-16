@@ -35,21 +35,23 @@ function getRandomInt(min, max) {
 
 let lastPlayedType = new WeakMap()
 function playSound(bufferArray,gainNode) {    
-    if (bufferArray.length > 0) {
-        if (!lastPlayedType.get(bufferArray)) {
-            lastPlayedType.set(bufferArray, 0)
+    if (!cachedSettings.globalMute) {
+        if (bufferArray.length > 0) {
+            if (!lastPlayedType.get(bufferArray)) {
+                lastPlayedType.set(bufferArray, 0)
+            }
+            if ((Date.now() - lastPlayedType.get(bufferArray)) > 50) {
+                let indexToPlay = getRandomInt(0,bufferArray.length-1)
+                var source = audioContext.createBufferSource();
+                source.buffer = bufferArray[indexToPlay];
+                source.connect(gainNode);
+                source.start(0);  
+                lastPlayedType.set(bufferArray, Date.now())
+            } else {
+                console.log("[GXM] blocked a sound playing for the sake of your ears")
+            }
         }
-        if ((Date.now() - lastPlayedType.get(bufferArray)) > 50) {
-            let indexToPlay = getRandomInt(0,bufferArray.length-1)
-            var source = audioContext.createBufferSource();
-            source.buffer = bufferArray[indexToPlay];
-            source.connect(gainNode);
-            source.start(0);  
-            lastPlayedType.set(bufferArray, Date.now())
-        } else {
-            console.log("[GXM] blocked a sound playing for the sake of your ears")
-        }
-    }          
+    }      
 }
 
 let play_browser_upgrade_sound = false
@@ -78,7 +80,10 @@ const cachedSettings = {
 
     lightTheme: false,
 
-    muteShopping: false
+    muteShopping: false,
+
+    globalMute: false,
+    globalMutePersist: false
 }
 
 let searchEngines = [] // Cached later
@@ -235,7 +240,7 @@ function updateLevels() {
     MasterGainNode.gain.value = (cachedSettings.volume/100)
 
     for (var gainNode of gainNodes) {
-        gainNode.gain.value = lerp(gainNode.gain.value, ((muted && cachedSettings.autoMute) || !cachedSettings.enabled || (shoppingMute && cachedSettings.muteShopping) || (mutedDueToFocus && cachedSettings.unfocusedMute)) ? 0 : Math.max(Math.min(l,1),0), clamp(delta*5,0,1));
+        gainNode.gain.value = lerp(gainNode.gain.value, ((muted && cachedSettings.autoMute) || !cachedSettings.enabled || (shoppingMute && cachedSettings.muteShopping) || (mutedDueToFocus && cachedSettings.unfocusedMute) || cachedSettings.globalMute) ? 0 : Math.max(Math.min(l,1),0), clamp(delta*5,0,1));
         l--;
     }
     lerpedLevel = lerp(lerpedLevel,level,clamp(delta*20,0,1))
@@ -756,6 +761,10 @@ function generateThemeColors(accentHSL, secondaryHSL, type) {
 
     const accentColor = hslToHex(accentHSL)
     const backgroundColor = hslToHex(secondaryHSL)
+
+    let colorString = `hsl(${accentHSL.h}deg ${accentHSL.h}% 55%)`
+    browser.browserAction.setBadgeBackgroundColor({ color: colorString });
+
     if (type === "dark") {
         return {
             icons: hslToHex({h: secondaryHSL.h, s: secondaryHSL.s, l: 76.86}),
@@ -1320,15 +1329,17 @@ browser.runtime.onMessage.addListener(onExtensionMessage);
 
 let navigatedYet = true
 async function checkTabAudible(tabId, changeInfo, tabInfo) {
-    if ((!currentTabFocused) && (currentTabId == tabId) && (changeInfo.status) && (changeInfo.status === "loading")) {
-        if (!navigatedYet) {
-            navigatedYet = true
-            if (cachedSettings.sfxKeyboard && cachedSettings.sfxAddressBar) {
-                KeyboardGainNode.gain.value = (cachedSettings.keyboardVolume/100);
-                playSound(currentKeyboardSounds.TYPING_ENTER ? currentKeyboardSounds.TYPING_ENTER : [], KeyboardGainNode);
+    if (tabId) {
+        if ((!currentTabFocused) && (currentTabId == tabId) && (changeInfo.status) && (changeInfo.status === "loading")) {
+            if (!navigatedYet) {
+                if (cachedSettings.sfxKeyboard && cachedSettings.sfxAddressBar && cachedSettings.consentedToProxy) {
+                    navigatedYet = true
+                    KeyboardGainNode.gain.value = (cachedSettings.keyboardVolume/100);
+                    playSound(currentKeyboardSounds.TYPING_ENTER ? currentKeyboardSounds.TYPING_ENTER : [], KeyboardGainNode);
+                    level += 1;
+                    playSoundsTimer = Date.now();
+                }
             }
-            level += 1;
-            playSoundsTimer = Date.now();
         }
     }
 
@@ -1337,8 +1348,7 @@ async function checkTabAudible(tabId, changeInfo, tabInfo) {
 }
 browser.tabs.onUpdated.addListener(checkTabAudible)
 
-browser.tabs.onCreated.addListener((tab) => {
-    //console.log('[GXM] new tab',tab.id);
+function tabAdded() {
     if (cachedSettings.sfxTabs) {
         SFXGainNode.gain.value = (cachedSettings.sfxVolume/100);
         playSound(currentBrowserSounds.TAB_INSERT ? currentBrowserSounds.TAB_INSERT : [], SFXGainNode);
@@ -1353,7 +1363,11 @@ browser.tabs.onCreated.addListener((tab) => {
             lastUnfocused = Date.now()
         }
     })
-})
+}
+
+browser.tabs.onCreated.addListener(tabAdded)
+browser.tabs.onAttached.addListener(tabAdded)
+
 browser.tabs.onRemoved.addListener((tab, removeInfo) => {
     if (!removeInfo.isWindowClosing) {
         if (cachedSettings.sfxTabs) {
@@ -1369,6 +1383,7 @@ browser.tabs.onRemoved.addListener((tab, removeInfo) => {
             lastUnfocused = Date.now()
         }
     })
+    checkTabAudible()
 })
 
 function handleActivated(activeInfo) {
@@ -1391,6 +1406,7 @@ if (typeof browser.windows !== "undefined") {
             SFXGainNode.gain.value = (cachedSettings.sfxVolume/100);
             playSound(currentBrowserSounds.TAB_CLOSE ? currentBrowserSounds.TAB_CLOSE : [], SFXGainNode);
         }
+        checkTabAudible()
     });
 
     browser.windows.onFocusChanged.addListener((windowId) => {
@@ -2141,6 +2157,9 @@ browser.storage.local.get().then(
         cachedSettings.consentedToJSD = (typeof result.consentedToJSD == "undefined") ? false : result.consentedToJSD;
         cachedSettings.consentedToProxy = (typeof result.consentedToProxy == "undefined") ? false : result.consentedToProxy;
 
+        cachedSettings.globalMutePersist = (typeof result.globalMutePersist == "undefined") ? false : result.globalMutePersist;
+        cachedSettings.globalMute = (typeof result.globalMute == "undefined" || (!cachedSettings.globalMutePersist)) ? false : result.globalMute;
+
         if (result.consentedToJSD && result.shoppingMute) {
             initShoppingMutes()
         }
@@ -2149,10 +2168,18 @@ browser.storage.local.get().then(
             initAddressBarListener()
         }
 
+        if (result.globalMute !== cachedSettings.globalMute) {
+            browser.storage.local.set({
+                globalMute: false
+            });
+        }
+
         loadSounds(result.trackName || 'off')
         loadKeyboardSounds(result.keyboardName || 'off')
         loadBrowserSounds(result.sfxName || 'off')
         loadTheme(result.themeName || 'off')
+
+        browser.browserAction.setBadgeText({text: (globalMute == true ? "off" : "")})
     },
     function(error) {
         console.log(`Error while enabling the initial track! ${error}`);
@@ -2171,6 +2198,8 @@ function updateSettings(changes) {
                 if (changes[item].newValue == true) {
                     initAddressBarListener()
                 }
+            } else if (item == "globalMute") {
+                browser.browserAction.setBadgeText({text: (changes[item].newValue == true ? "off" : "")})
             }
         }
     }
@@ -2303,6 +2332,42 @@ browser.runtime.onSuspendCanceled.addListener(function () {
     console.log("[GXM] we back")
 })
 refreshWebModCache()
+
+const commandFunctions = {
+    "background-music": function() {
+        browser.storage.local.set({
+            enabled: !cachedSettings.enabled
+        })
+    },
+    "keyboard-sounds": function() {
+        browser.storage.local.set({
+            sfxKeyboard: !cachedSettings.sfxKeyboard
+        })
+    },
+    "bgm-automute": function() {
+        browser.storage.local.set({
+            autoMute: !cachedSettings.autoMute
+        })
+    },
+    "gxm-mute": function() {
+        browser.storage.local.set({
+            globalMute: !cachedSettings.globalMute
+        })
+    },
+    "mod-manager": function() {
+        browser.runtime.openOptionsPage()
+    }
+}
+
+browser.commands.onCommand.addListener((command) => {
+    if (commandFunctions[command]) {
+        console.log(`Running command ${command}`)
+        commandFunctions[command]()
+        console.log(`${command} executed`)
+    } else {
+        console.warn(`Unknown command ${command}`)
+    }
+});
 
 async function handleUpdated(updateInfo) {
     if (updateInfo.theme.colors) {
@@ -2618,6 +2683,12 @@ function initAddressBarListener() {
                 } else {
                     console.log("removing listener, no longer enabled")
                     browser.proxy.onRequest.removeListener(handleProxyRequest)
+
+                    lastLength = 0;
+                    lastURL = null;
+                    lastSubdomain = null;
+                    playSoundsTimer = null;
+                    navigatedYet = true
                 }
             }
 
@@ -2647,6 +2718,12 @@ function initAddressBarListener() {
                     sfxAddressBar: false,
                     consentedToProxy: false
                 });
+                
+                lastLength = 0;
+                lastURL = null;
+                lastSubdomain = null;
+                playSoundsTimer = null;
+                navigatedYet = true
             }
         }
     })
@@ -2668,4 +2745,3 @@ async function permissionsAdded(addedPermissions) {
 
 browser.permissions.onAdded.addListener(permissionsAdded);
 browser.permissions.onRemoved.addListener(initAddressBarListener);
-

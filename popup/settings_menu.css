@@ -148,7 +148,7 @@ html, body {
   100% {-webkit-mask-position:left}
 }
 
-#optionsTitle {
+.categoryTitle {
   font-weight: 600;
 }
 

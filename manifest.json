@@ -2,7 +2,7 @@
   "description": "Add ambient music, typing sounds, and more to your browsing experience.",
   "manifest_version": 2,
   "name": "GX Mods",
-  "version": "6.2.2",
+  "version": "6.3.0",
   "developer": {
     "name": "Noble (@frost@wolfdo.gg), Taylor (@tay@tech.lgbt)",
     "url": "https://github.com/noblereign/GX-Mods-Extension"
@@ -51,6 +51,33 @@
     }],
     "default_title": "GX Mods",
     "default_popup": "popup/settings_menu.html"
+  },
+
+  "commands": {
+    "background-music": {
+      "suggested_key": {
+        "default": "Ctrl+Alt+B"
+      },
+      "description": "Toggle background music"
+    },
+    "keyboard-sounds": {
+      "suggested_key": {
+        "default": "Ctrl+Alt+K"
+      },
+      "description": "Toggle keyboard sounds"
+    },
+    "bgm-automute": {
+      "description": "Toggle automatic music mute"
+    },
+    "gxm-mute": {
+      "suggested_key": {
+        "default": "Ctrl+Alt+G"
+      },
+      "description": "Toggle global mute"
+    },
+    "mod-manager": {
+      "description": "Open Mod Manager"
+    }
   },
 
   "web_accessible_resources": [

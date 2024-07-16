@@ -55,7 +55,7 @@
       </div>
     </div>
 
-    <span id="optionsTitle">Background music</span>
+    <span id="optionsTitle" class="categoryTitle">Background music</span>
     <hr>
     <div class="optionContainer switchContainer">
       <label for="enabled">Enabled</label>
@@ -124,7 +124,7 @@
     <br>
     <hr>
     <hr class="spacer">
-    <span id="optionsTitle">Browser sounds</span>
+    <span id="optionsTitle" class="categoryTitle">Browser sounds</span>
     <hr>
     <div class="optionContainer switchContainer">
       <label for="tabsOn">React to tabs</label>
@@ -201,7 +201,7 @@
     <hr class="spacer">
     <hr>
     <hr class="spacer">
-    <span id="optionsTitle">Keyboard sounds</span>
+    <span id="optionsTitle" class="categoryTitle">Keyboard sounds</span>
     <hr>
 
     <div class="optionContainer switchContainer">
@@ -246,7 +246,7 @@
     <hr class="spacer">
     <hr>
     <hr class="spacer">
-    <span id="optionsTitle">Theming</span>
+    <span id="optionsTitle" class="categoryTitle">Theming</span>
     <hr>
     <hr class="spacer">
     <div id="knownWebMods">
@@ -269,8 +269,29 @@
         <span class="toggleSwitch round"></span>
       </label>
     </div>
+
+    <hr>
     <hr class="spacer">
-    
+    <span id="muteTitle" class="categoryTitle">Other</span>
+    <hr>
+    <div class="optionContainer switchContainer">
+      <label for="gxmMuted">Global mute</label>
+      <label class="switch">
+        <input id="gxmMuted" type="checkbox">
+        <span class="toggleSwitch round"></span>
+      </label>
+    </div>
+    <div class="optionContainer switchContainer disabled", id="gxmMutePersistContainer">
+      <label for="gxmMutePersist">Persist after restart</label>
+      <label class="switch">
+        <input id="gxmMutePersist" type="checkbox" disabled>
+        <span class="toggleSwitch round"></span>
+      </label>
+    </div>
+    <hr>
+
+    <hr class="spacer">
+
     <div class="optionContainer buttonsContainer">
       <!--<button class="gxButton" id="deleteModButton"><svg width="0" height="17" viewBox="0 0 0 17" fill="none" xmlns="http://www.w3.org/2000/svg"></svg>Delete</button>-->
       <button class="gxButton" id="createModButton"><svg width="18" height="17" viewBox="0 0 18 17" fill="none"

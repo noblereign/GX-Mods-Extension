@@ -57,6 +57,10 @@ const keyboardSource = document.getElementById('keyboard-source')
 
 const webModItemTemplate = document.getElementById('webModTemplate')
 
+const globalMuteBox = document.getElementById('gxmMuted');
+const globalMutePersistBox = document.getElementById('gxmMutePersist');
+const globalMutePersistContainer = document.getElementById('gxmMutePersistContainer')
+
 async function getPreferredColorScheme() {
     let browserStorage = await browser.storage.local.get().then(
         async function(result) {
@@ -298,6 +302,9 @@ function saveOptions() {
         muteShopping: muteShoppingBox.checked,
         consentedToJSD: consentedToJSD,
         consentedToProxy: consentedToProxy,
+
+        globalMute: globalMuteBox.checked,
+        globalMutePersist: globalMutePersistBox.checked
     });
 }
 
@@ -381,6 +388,17 @@ async function restoreOptions() {
             }
         } else {
             keyboardSource.classList.add("hidden");
+        }
+
+        globalMuteBox.checked = (typeof result.globalMute == "undefined") ? false : result.globalMute;
+        globalMutePersistBox.checked = (typeof result.globalMutePersist == "undefined") ? false : result.globalMutePersist;
+
+        if (globalMuteBox.checked) {
+            globalMutePersistBox.disabled = false;
+            globalMutePersistContainer.classList.remove("disabled");
+        } else {
+            globalMutePersistBox.disabled = true;
+            globalMutePersistContainer.classList.add("disabled");
         }
 
         loadingShimmer.setAttribute("disabled", "");
@@ -531,6 +549,21 @@ SFXbuttonsBox.addEventListener('change', (event) => {
 SFXupdatesBox.addEventListener('change', (event) => {
     saveOptions()
 })
+
+globalMuteBox.addEventListener('change', (event) => {
+    if (globalMuteBox.checked) {
+        globalMutePersistBox.disabled = false;
+        globalMutePersistContainer.classList.remove("disabled");
+    } else {
+        globalMutePersistBox.disabled = true;
+        globalMutePersistContainer.classList.add("disabled");
+    }
+    saveOptions()
+})
+globalMutePersistBox.addEventListener('change', (event) => {
+    saveOptions()
+})
+
 lightThemeBox.addEventListener('change', (event) => {
     browser.runtime.sendMessage(`schemechange_${lightThemeBox.checked ? "light" : "dark"}`)
     saveOptions()
@@ -667,3 +700,5 @@ document.addEventListener("change",sendCheckedEvent,{
     once: false,
     passive: true
 })
+
+browser.commands.onCommand.addListener(restoreOptions)

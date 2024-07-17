@@ -42,6 +42,10 @@ const zipPicker = document.getElementById('zip');
 const zipPreview = document.querySelector(".zipPreview");
 const zipItemTemplate = document.getElementById('unzippedMod')
 
+const debugButton = document.getElementById('footerLink')
+const modal_debug = document.getElementById('debugModal')
+const cancelButton_debug = document.getElementById("cancel_debug")
+
 acceptButton_import.disabled = true
 acceptButton.disabled = true
 
@@ -1357,6 +1361,14 @@ acceptButton_import.onclick = function () {
     acceptButton_import.textContent = "Add mod"
 };
 
+debugButton.onclick = function() {
+    modal_debug.classList.remove("hidden");
+    return false;
+};
+cancelButton_debug.onclick = function() {
+    modal_debug.classList.add("hidden");
+};
+
 
 if (document.readyState === "loading") {
     console.log("[GXM Manager] Waiting for DOM Content Load");
@@ -1369,3 +1381,50 @@ if (document.readyState === "loading") {
 }
 
 browser.storage.local.onChanged.addListener(updateModList);
+
+debugButton.textContent = `GX Mods ${browser.runtime.getManifest().version}`
+const debugLoggingBox = document.getElementById('enableSoundLogs');
+const exportLogButton = document.getElementById('export_log');
+const clearLogButton = document.getElementById('empty_log');
+
+async function initDebugOptions() {
+    debugLoggingBox.checked = await browser.runtime.sendMessage('isdebuglogenabled')
+    exportLogButton.disabled = !debugLoggingBox.checked
+    clearLogButton.disabled = !debugLoggingBox.checked
+}
+
+debugLoggingBox.addEventListener("change", function() {
+    const selectedOption = debugLoggingBox.checked; // Get the selected value
+    browser.runtime.sendMessage('debug_logenabled_' + selectedOption)
+
+    exportLogButton.disabled = !debugLoggingBox.checked
+    clearLogButton.disabled = !debugLoggingBox.checked
+});
+
+function downloadLog(filename, text) {
+    var element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', filename);
+  
+    element.style.display = 'none';
+    document.body.appendChild(element);
+  
+    element.click();
+  
+    document.body.removeChild(element);
+}
+
+exportLogButton.onclick = async function () {
+    let includeSensitive = confirm(`Do you want to include tab URLs in this log export?\nPress "OK" for yes or "Cancel" for no.\n\nPick "Cancel" if you aren't sure, as tab URLs may expose sensitive data.`)
+    let debugString = await browser.runtime.sendMessage({
+        intent: "exportLog",
+        redact: !includeSensitive
+    })
+    downloadLog(`GXM-DebugLog${!includeSensitive ? "-REDACTED" : ""} @${Date.now()}.txt`, debugString)
+};
+
+clearLogButton.onclick = function () {
+    if (confirm(`Really clear debug logs?`)) {
+        browser.runtime.sendMessage('cleardebuglogs')
+    } 
+};

@@ -446,16 +446,12 @@ body > .buttonsContainer {
   opacity: .4;
 }
 
-.gxButton:not(:disabled):hover {
+.gxButton:not(.finishButton):not(:disabled):hover {
   background-color: hsl(var(--gx-no-20));
 }
 
-.gxButton:not(:disabled):active {
+.gxButton:not(.finishButton):not(:disabled):active {
   background-image: linear-gradient(rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.06));
-}
-
-.gxButton:disabled {
-  cursor: not-allowed;
 }
 
 .deleteModButton, #cancel {
@@ -530,10 +526,6 @@ body > .buttonsContainer {
   border-color: hsl(var(--gx-accent-l-60));
   color: hsl(var(--gx-accent-100-contrast));
   font-weight: 700;
-}
-.finishButton:disabled {
-  cursor: not-allowed;
-  opacity: .4;
 }
 .finishButton:not(:disabled):hover {
   background-image: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1));
@@ -847,4 +839,16 @@ li.sfxPreviewItem {
 
 #iconButton:active > .iconButtonOverlay {
   background-image: linear-gradient(rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.06));
+}
+
+footer {
+	display: flex;
+	justify-content: center;
+  padding-bottom: .5em;
+}
+
+#footerLink {
+	text-decoration: none;
+	color: hsl(var(--gx-gray-50));
+	font-size: .7em;
 }

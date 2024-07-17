@@ -5,6 +5,9 @@ let shoppingListCache = ""
 let shoppingMute = false
 
 let audioContext = new (window.AudioContext || window.webkitAudioContext)();
+let debugLogging = [] // only used if the user enables the debug option
+let loggingEnabled = false
+const LOGGING_MAX_LENGTH = 128
 
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
@@ -52,6 +55,19 @@ function playSound(bufferArray,gainNode) {
             }
         }
     }      
+}
+
+function addToLog(message, sensitive) {
+    if (loggingEnabled) {
+        debugLogging.push({
+            time: new Date(),
+            message: message,
+            sensitive: sensitive
+        })
+        if (debugLogging.length > LOGGING_MAX_LENGTH) {
+            debugLogging.shift();
+        }
+    }
 }
 
 let play_browser_upgrade_sound = false
@@ -910,6 +926,16 @@ browser.tabs.query({ currentWindow: true, active: true }).then(function(tabs){
     }
 })
 
+function sendSoundPlayLogEvent(type, event, currentTab) {
+    let tabId = currentTab ? (currentTab.id ? currentTab.id.toString() : (currentTab.tabId ? currentTab.tabId.toString() : "(could not find ID)")) : "(No tab object)"
+    let windowId = currentTab ? (currentTab.id ? currentTab.windowId.toString() : (currentTab.frameId ? ("frame " + currentTab.frameId.toString()) : "(could not find ID)")) : "(No tab object)"
+    let tabFocused = currentTab ? currentTab.active : false
+
+    let tabUrl = currentTab ? currentTab.url : "(No tab object)"
+
+    addToLog(`${type} played via '${event}' event, from tab ${tabId} in window ${windowId}. Focused: ${tabFocused}`, `URL: ${tabUrl}`)
+}
+
 async function onExtensionMessage(message, sender) {
     if ((typeof message === 'object') && (message != null)) {
         if (message.intent == "getModState" && message.modId) {
@@ -1182,6 +1208,13 @@ async function onExtensionMessage(message, sender) {
                     error: "Transfer failed."
                 }
             }
+        } else if (message.intent == "exportLog" && message.redact !== null && message.redact !== undefined) {
+            let browserInfo = await browser.runtime.getBrowserInfo()
+            let newLogString = `GX Mods ${browser.runtime.getManifest().version}\n${browserInfo.vendor} ${browserInfo.name} ${browserInfo.version} (Build ${browserInfo.buildID})\nLog usage: ${debugLogging.length}/${LOGGING_MAX_LENGTH} events\n\n`
+            debugLogging.forEach(function(data, index) {
+                newLogString += `[${data.time.toUTCString()}] // ${data.message}. ${!message.redact ? data.sensitive : ""}${index < debugLogging.length-1 ? "\n" : ""}`
+            });
+            return newLogString
         } else {
             console.log('[GXM] unknown object received');
             console.log(message);
@@ -1211,11 +1244,22 @@ async function onExtensionMessage(message, sender) {
         } else {
             return false
         }
+    } else if (message.startsWith('debug_logenabled_')) {
+        loggingEnabled = message.endsWith('true')
+        console.warn(`Log enabled changed: ${loggingEnabled}`)
+        return true
+    } else if (message.startsWith('isdebuglogenabled')) {
+        return loggingEnabled
+    } else if (message.startsWith('cleardebuglogs')) {
+        debugLogging.length = 0
+        console.warn("Debug logs have been cleared")
+        return true
     } else if (message.startsWith('mousehover')) {
         if (cachedSettings.sfxHovers) {
             SFXGainNode.gain.value = (cachedSettings.sfxVolume/100);
             playSound(currentBrowserSounds.HOVER ? currentBrowserSounds.HOVER : [], SFXGainNode);
         }
+        return true
     } else if (message.startsWith('mouse')) {
         level += 2.5;
     } else if (message.startsWith('volumeChange=')) {
@@ -1234,6 +1278,7 @@ async function onExtensionMessage(message, sender) {
         if (cachedSettings.sfxKeyboard) {
             KeyboardGainNode.gain.value = (cachedSettings.keyboardVolume/100);
             playSound(currentKeyboardSounds.TYPING_SPACE ? currentKeyboardSounds.TYPING_SPACE : [], KeyboardGainNode);
+            sendSoundPlayLogEvent("TYPING_SPACE","spacedown",sender.tab)
         }
         level += 1;
         lastTyped = Date.now();
@@ -1241,6 +1286,7 @@ async function onExtensionMessage(message, sender) {
         if (cachedSettings.sfxKeyboard) {
             KeyboardGainNode.gain.value = (cachedSettings.keyboardVolume/100);
             playSound(currentKeyboardSounds.TYPING_BACKSPACE ? currentKeyboardSounds.TYPING_BACKSPACE : [], KeyboardGainNode);
+            sendSoundPlayLogEvent("TYPING_BACKSPACE","bkspdown",sender.tab)
         }
         level += 1;
         lastTyped = Date.now();
@@ -1248,6 +1294,7 @@ async function onExtensionMessage(message, sender) {
         if (cachedSettings.sfxKeyboard) {
             KeyboardGainNode.gain.value = (cachedSettings.keyboardVolume/100);
             playSound(currentKeyboardSounds.TYPING_ENTER ? currentKeyboardSounds.TYPING_ENTER : [], KeyboardGainNode);
+            sendSoundPlayLogEvent("TYPING_ENTER","enterdown",sender.tab)
         }
         level += 1;
         lastTyped = Date.now();
@@ -1258,6 +1305,7 @@ async function onExtensionMessage(message, sender) {
         if (cachedSettings.sfxKeyboard) {
             KeyboardGainNode.gain.value = (cachedSettings.keyboardVolume/100);
             playSound(currentKeyboardSounds.TYPING_LETTER ? currentKeyboardSounds.TYPING_LETTER : [], KeyboardGainNode);
+            sendSoundPlayLogEvent("TYPING_LETTER","keydown",sender.tab)
         }
         level += 1;
         lastTyped = Date.now();
@@ -1336,6 +1384,7 @@ async function checkTabAudible(tabId, changeInfo, tabInfo) {
                     navigatedYet = true
                     KeyboardGainNode.gain.value = (cachedSettings.keyboardVolume/100);
                     playSound(currentKeyboardSounds.TYPING_ENTER ? currentKeyboardSounds.TYPING_ENTER : [], KeyboardGainNode);
+                    sendSoundPlayLogEvent("TYPING_ENTER","checkTabAudible",sender.tab)
                     level += 1;
                     playSoundsTimer = Date.now();
                 }
@@ -2606,11 +2655,14 @@ function shouldPlayAddressBarSound(requestInfo) {
                                 if (lastLength < requestInfo.url.length) {
                                     playSound(currentKeyboardSounds.TYPING_LETTER ? currentKeyboardSounds.TYPING_LETTER : [], KeyboardGainNode);
                                     lastMove = "TYPE"
+                                    sendSoundPlayLogEvent("TYPING_LETTER","addressBar",requestInfo)
                                 } else if (lastLength > requestInfo.url.length) {
                                     playSound(currentKeyboardSounds.TYPING_BACKSPACE ? currentKeyboardSounds.TYPING_BACKSPACE : [], KeyboardGainNode);
                                     lastMove = "BKSP"
+                                    sendSoundPlayLogEvent("TYPING_BACKSPACE","addressBar",requestInfo)
                                 } else {
                                     playSound(lastMove == "TYPE" ? (currentKeyboardSounds.TYPING_SPACE ? currentKeyboardSounds.TYPING_SPACE : []) : (currentKeyboardSounds.TYPING_BACKSPACE ? currentKeyboardSounds.TYPING_BACKSPACE : []), KeyboardGainNode);
+                                    sendSoundPlayLogEvent("TYPING_SPACE","addressBar",requestInfo)
                                 }
                                 level += 1;
                                 lastLength = requestInfo.url.length
@@ -2629,12 +2681,6 @@ function shouldPlayAddressBarSound(requestInfo) {
                 browser.windows.getCurrent().then(function(window) {
                     if (window.focused) {
                         if (!currentTabFocused) {
-                            //if (cachedSettings.sfxKeyboard) {
-                            //    KeyboardGainNode.gain.value = (cachedSettings.keyboardVolume/100);
-                            //    playSound(currentKeyboardSounds.TYPING_ENTER ? currentKeyboardSounds.TYPING_ENTER : [], KeyboardGainNode);
-                            //}
-                            //level += 1;
-                            //playSoundsTimer = Date.now();
                             navigatedYet = true
                         } else {
                             lastLength = 0;

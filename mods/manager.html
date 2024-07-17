@@ -176,6 +176,37 @@
       </div>
     </div>
 
+    <div id="debugModal" class="modal hidden">
+      <div class="modalContent">
+        <div class="modalContainer">
+          <h1>Debug options</h1>
+          <hr>
+          <span class="subtitle">These options are for diagnosing problems with GXM, and will not persist through restarts.</span>
+          <div class="optionContainer switchContainer">
+            <label for="enableSoundLogs">Log keyboard sound events during this session</label>
+            <label class="switch">
+              <input id="enableSoundLogs" type="checkbox">
+              <span class="toggleSwitch round"></span>
+            </label>
+          </div>
+          <span class="subtitle">Only the last 128 events will be logged.</span><br>
+          <hr class="spacer">
+          <button class="gxButton" id="export_log" draggable="false" disabled>Export log to file</button>
+          <button class="gxButton" id="empty_log" draggable="false" disabled>Clear logs</button>
+          <br>
+          <hr class="spacer">
+          <hr>
+          <div class="buttonsContainer">
+            <button class="gxButton" id="cancel_debug" draggable="false">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <a id="footerLink" href="#">GX Mods...</a>
+    </footer> 
+
     <script src="../libs/localforage.min.js"></script>
     <script src="../libs/zip-no-worker-inflate.min.js"></script>
     <script src="manager.js"></script>

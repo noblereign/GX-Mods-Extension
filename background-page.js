@@ -2217,7 +2217,7 @@ browser.storage.local.get().then(
             initAddressBarListener()
         }
 
-        if (result.globalMute !== cachedSettings.globalMute) {
+        if ((result.globalMute !== cachedSettings.globalMute) && !cachedSettings.globalMutePersist) {
             browser.storage.local.set({
                 globalMute: false
             });
@@ -2228,7 +2228,7 @@ browser.storage.local.get().then(
         loadBrowserSounds(result.sfxName || 'off')
         loadTheme(result.themeName || 'off')
 
-        browser.browserAction.setBadgeText({text: (globalMute == true ? "off" : "")})
+        browser.browserAction.setBadgeText({text: (cachedSettings.globalMute == true ? "off" : "")})
     },
     function(error) {
         console.log(`Error while enabling the initial track! ${error}`);

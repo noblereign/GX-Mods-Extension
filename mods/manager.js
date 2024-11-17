@@ -12,7 +12,7 @@ const filePicker = document.getElementById('files');
 const iconPicker = modal.querySelector('#icon');
 const localIconPreview = modal.querySelector('.modIcon');
 
-
+let proxyPreviouslyAvailable = false;
 
 const preview = document.querySelector(".preview");
 

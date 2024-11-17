@@ -314,6 +314,10 @@ async function restoreOptions() {
         muteFocusBox.disabled = true;
         muteFocusContainer.classList.add("disabled");
         muteFocusBox.checked = true; // android must always have this on or else it'll play in other apps :/
+
+        SFXkeyboardAddressBox.disabled = true;
+        SFXkeyboardAddressBox.classList.add("disabled");
+        SFXkeyboardAddressBox.checked = false; // android doesn't implement 'search' api :(
     }
 
     async function setCurrentChoice(result) {
@@ -649,9 +653,16 @@ iConsent.onclick = function() {
 const iDontConsent_Proxy = document.querySelector("#cancel_proxy")
 const iConsent_Proxy = document.querySelector("#consent_proxy")
 
-const addressBarPermissions = {
-    permissions: ["proxy", "search"]
+let addressBarPermissions = {
+    permissions: ["proxy"]
 };
+browser.runtime.getPlatformInfo().then(function(platformInfo) {
+    if (platformInfo.os != 'android') {
+        addressBarPermissions.permissions.push("search")
+    }
+})
+    
+
 
 iDontConsent_Proxy.onclick = function() {
     consentOptionalProxy.removeAttribute("enabled");
@@ -660,7 +671,7 @@ iConsent_Proxy.onclick = async function() {
     console.log("Requesting permissions...")
     const response = await browser.permissions.request(addressBarPermissions);
     if (response) {
-        console.log("Permissons gotten");
+        console.log("Permissions gotten");
         console.log(response)
         consentOptionalProxy.removeAttribute("enabled");
         SFXkeyboardAddressBox.checked = true

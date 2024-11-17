@@ -30,6 +30,15 @@ async function loadAndDecodeAudio(url) {
     }
 }
 
+let addressBarPermissions = {
+    permissions: ["proxy"]
+};
+browser.runtime.getPlatformInfo().then(function(platformInfo) {
+    if (platformInfo.os != 'android') {
+        addressBarPermissions.permissions.push("search")
+    }
+})
+
 function getRandomInt(min, max) {
     min = Math.ceil(min);
     max = Math.floor(max);
@@ -1831,22 +1840,24 @@ async function loadKeyboardSounds(track) {
 
     modData = null;
 
-    const hasSearchPermission = (cachedSettings.consentedToProxy && cachedSettings.sfxAddressBar && await browser.permissions.contains({permissions: ["search", "proxy"]}))
+    const hasSearchPermission = (cachedSettings.consentedToProxy && cachedSettings.sfxAddressBar && await browser.permissions.contains(addressBarPermissions))
     if (hasSearchPermission) {
-        browser.search.get().then(
-            function(result) {
-                result.sort(function(a, b) {
-                    if (a.isDefault) {
-                        return -1
-                    } else {
-                        return 0
-                    }
-                })
-                searchEngines = result
-                console.log("Search engines fetched.")
-                console.log(searchEngines)
-            }
-        )
+        if (addressBarPermissions.permissions.includes("search")) {
+            browser.search.get().then(
+                function(result) {
+                    result.sort(function(a, b) {
+                        if (a.isDefault) {
+                            return -1
+                        } else {
+                            return 0
+                        }
+                    })
+                    searchEngines = result
+                    console.log("Search engines fetched.")
+                    console.log(searchEngines)
+                }
+            )
+        }
     }
 
     return true
@@ -2712,7 +2723,7 @@ function handleProxyRequest(requestInfo) { // never actually proxies anything, o
 let lastAbleToInit = true
 function initAddressBarListener() {
     console.log("initing address bar listener")
-    browser.permissions.contains({permissions: ["search", "proxy"]}).then(function(hasSearchPermission) {
+    browser.permissions.contains(addressBarPermissions).then(function(hasSearchPermission) {
         if (hasSearchPermission) {
             console.log("search permissions detected")
 
@@ -2739,20 +2750,22 @@ function initAddressBarListener() {
             }
 
             if (searchEngines === undefined || searchEngines.length == 0) {
-                browser.search.get().then(
-                    function(result) {
-                        result.sort(function(a, b) {
-                            if (a.isDefault) {
-                                return -1
-                            } else {
-                                return 0
-                            }
-                        })
-                        searchEngines = result
-                        console.log("Search engines fetched.")
-                        tryProxyListener()
-                    }
-                )
+                if (addressBarPermissions.permissions.includes("search")) {
+                    browser.search.get().then(
+                        function(result) {
+                            result.sort(function(a, b) {
+                                if (a.isDefault) {
+                                    return -1
+                                } else {
+                                    return 0
+                                }
+                            })
+                            searchEngines = result
+                            console.log("Search engines fetched.")
+                            tryProxyListener()
+                        }
+                    )
+                }
             } else {
                 tryProxyListener()
             }
@@ -2777,7 +2790,7 @@ function initAddressBarListener() {
 
 async function permissionsAdded(addedPermissions) {
     if (addedPermissions.permissions.includes("search") || addedPermissions.permissions.includes("proxy")) {
-        browser.permissions.contains({permissions: ["search", "proxy"]}).then(function(hasSearchPermission) {
+        browser.permissions.contains(addressBarPermissions).then(function(hasSearchPermission) {
             if (hasSearchPermission) {
                 console.log("Force setting to true, as we weren't able to init before. Workaround for popup appearing behind settings menu")
                 browser.storage.local.set({

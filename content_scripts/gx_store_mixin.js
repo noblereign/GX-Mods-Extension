@@ -5,6 +5,7 @@ function addLocationObserver(callback) {
     const observer = new MutationObserver(callback)
     observer.observe(document.body, config)
 }
+const delay = ms => new Promise(res => setTimeout(res, ms));
 
 function observerCallback() {
     if (window.location.href != lastHref) {
@@ -32,10 +33,11 @@ var timeout = 3000; // 3000ms = 3 seconds
 
 function fetchRetry(url, options = {}, retries = 3, backoff = 300) {
     const retryCodes = [408, 500, 502, 503, 504, 522, 524];
+    const notFoundCodes = [403, 404];
     return content.fetch(url, options)
         .then(res => {
             if (res.ok) {
-                console.log("Fetch succeeded");
+                console.log("Fetch succeeded, downloading json...");
                 return res.json();
             }
 
@@ -45,7 +47,11 @@ function fetchRetry(url, options = {}, retries = 3, backoff = 300) {
                 }, backoff);
             } else {
                 console.log(res)
-                throw new Error("Failed to fetch file");
+                if (notFoundCodes.includes(res.status)) {
+                    return null
+                } else {
+                    throw new Error("Failed to fetch file");
+                }
             }
         })
         .catch(console.error);
@@ -53,20 +59,25 @@ function fetchRetry(url, options = {}, retries = 3, backoff = 300) {
 
 function fetchRetryBlob(url, options = {}, retries = 3, backoff = 300) {
     const retryCodes = [408, 500, 502, 503, 504, 522, 524];
+    const notFoundCodes = [403, 404];
     return content.fetch(url, options)
         .then(res => {
             if (res.ok) {
-                console.log("Fetch succeeded");
+                console.log("Fetch succeeded, downloading blob...");
                 return res.blob();
             }
 
             if (retries > 0 && retryCodes.includes(res.status)) {
                 setTimeout(() => {
-                    return fetchRetry(url, options, retries - 1, backoff * 2);
+                    return fetchRetryBlob(url, options, retries - 1, backoff * 2);
                 }, backoff);
             } else {
                 console.log(res)
-                throw new Error("Failed to fetch file");
+                if (notFoundCodes.includes(res.status)) {
+                    return null
+                } else {
+                    throw new Error("Failed to fetch blob");
+                }
             }
         })
         .catch(console.error);
@@ -74,10 +85,11 @@ function fetchRetryBlob(url, options = {}, retries = 3, backoff = 300) {
 
 function fetchRetryText(url, options = {}, retries = 3, backoff = 300) {
     const retryCodes = [408, 500, 502, 503, 504, 522, 524];
+    const notFoundCodes = [403, 404];
     return fetch(url, options)
         .then(res => {
             if (res.ok) {
-                console.log("Fetch succeeded");
+                console.log("Fetch succeeded, downloading text...");
                 return res.text();
             }
 
@@ -86,7 +98,12 @@ function fetchRetryText(url, options = {}, retries = 3, backoff = 300) {
                     return fetchRetryText(url, options, retries - 1, backoff * 2);
                 }, backoff);
             } else {
-                throw new Error(res);
+                console.log(res)
+                if (notFoundCodes.includes(res.status)) {
+                    return null
+                } else {
+                    throw new Error("Failed to fetch text");
+                }
             }
         })
         .catch(console.error);
@@ -106,12 +123,13 @@ function handleModButton(installModButton, modId) {
         .then(async function(result) {
             if (result.data) {
                 let modPayload = result.data.manifestSource.mod.payload
-                if ((result.data.contentUrl != null) && (result.data.manifestSource != null) && (result.data.manifestSource.mod != null) && (modPayload != null) && (result.data.packageVersion != null) && (result.data.modShortId != null)) {
+                if ((result.data.contentFiles != null) && (result.data.contentUrl != null) && (result.data.manifestSource != null) && (result.data.manifestSource.mod != null) && (modPayload != null) && (result.data.packageVersion != null) && (result.data.modShortId != null)) {
                     let musicArray = modPayload.background_music
                     let keyboardArray = modPayload.keyboard_sounds
                     let browserArray = modPayload.browser_sounds
                     let cssArray = modPayload.page_styles
                     let themeArray = modPayload.theme
+                    let fileList = result.data.contentFiles
 
                     if (musicArray || keyboardArray || browserArray || cssArray || themeArray) {
                         /*https://play.gxc.gg/mods/922a6edc-98e4-432e-8096-5892210dd9b0/e3a14659-05e5-4bb7-878c-38249f58968b/2f4daefd-0f05-4fb5-8893-ca8f64b785ee/contents/music/layer1.wav*/
@@ -145,6 +163,15 @@ function handleModButton(installModButton, modId) {
                             installModButton.addEventListener("click", async (event) => {
                                 console.log("[GXM] Initiating install")
                                 installModButton.setAttribute("disabled","")
+                                
+                                let ignoreFailure = false
+                                if (installModButton.hasAttribute("installError")) {
+                                    installModButton.textContent = "Waiting for user"
+                                    if (confirm('Would you like to ignore missing assets this time? This will give you a better chance of installing the mod, although it might not function as the author intended.')) {
+                                        ignoreFailure = true
+                                    }
+                                }
+
                                 installModButton.textContent = "Installing..."
 
                                 //insert "don't close the tab" warning
@@ -166,6 +193,7 @@ function handleModButton(installModButton, modId) {
 
                                 let installResult = await installMod({
                                     intent: "installMod",
+                                    retry: ignoreFailure,
                                     modId: modInternalId,
                                     modContentUrl: baseURL,
                                     modLayers: musicArray,
@@ -178,7 +206,8 @@ function handleModButton(installModButton, modId) {
                                     modStorePage: modStorePage,
                                     modMangledTitle: result.data.mangledTitle,
                                     modShortId: result.data.modShortId,
-                                    modIcons: result.data.icons
+                                    modIcons: result.data.icons,
+                                    modContentFiles: fileList
                                 })
 
                                 console.log("Install result");
@@ -186,9 +215,43 @@ function handleModButton(installModButton, modId) {
                                 if (installResult.succeeded) {
                                     dontCloseWarning.remove()
                                     installModButton.textContent = "Reinstall"
+                                    installModButton.removeAttribute("installError")
+                                    
+                                    if (installResult.missing) {
+                                        let missingContent = ""
+
+                                        if (installResult.missing.layers) {
+                                            missingContent += "Background Music"
+                                        }
+                                        if (installResult.missing.keyboardSounds) {
+                                            if (missingContent != "") {
+                                                missingContent += "\n"
+                                            }
+                                            missingContent += "Keyboard Sounds"
+                                        }
+                                        if (installResult.missing.browserSounds) {
+                                            if (missingContent != "") {
+                                                missingContent += "\n"
+                                            }
+                                            missingContent += "Browser Sounds"
+                                        }
+                                        if (installResult.missing.webMods) {
+                                            if (missingContent != "") {
+                                                missingContent += "\n"
+                                            }
+                                            missingContent += "Web Mods"
+                                        }
+
+                                        if (missingContent != "") {
+                                            alert(`Some assets from the following categories could not be found:\n\n${missingContent}\n\nThe mod may not function as intended by the author.\nThis issue is commonly caused by a misconfiguration from either the mod author, or the GX Store itself.\nMore details are available in the console.`)
+                                        }
+                                    }
                                 } else {
                                     dontCloseText.innerHTML = `If the issue persists, you may want to <a class="text-neutral-77 transition-colors hover:text-neutral-100" href="https://github.com/noblereign/GX-Mods-Extension/issues/new/choose">report it to us</a>.`
                                     installModButton.textContent = installResult.error ? installResult.error : "Something went wrong."
+                                    if (installResult.retryOffered) {
+                                        installModButton.setAttribute("installError","true")
+                                    }
                                 }
                                 installModButton.removeAttribute("disabled")
                             });
@@ -266,10 +329,59 @@ function updateInstallerButtons(modId,text) {
 const clamp = (val, min, max) => Math.min(Math.max(val, min), max)
 
 //const findEnvVars = /(env\()[^)]*(\))/;
+function isEmptyOrSpaces(str){
+    return str === null || str.match(/^ *$/) !== null;
+}
+
+async function tryToGetFile(downloadURL, fileURL, contentFiles, prefixURL, isText) {
+    let downloadedFile = await (isText ? fetchRetryText(downloadURL) : fetchRetryBlob(downloadURL))
+    if (!downloadedFile) {
+        console.warn(`Failed to fetch ${fileURL}, falling back to contentFiles search`)
+        var filename = fileURL.replace(/^.*[\\/]/, '')
+        if (isEmptyOrSpaces(filename)) {
+            console.warn(`Nvm... it's referencing a folder. (bruh)`)
+            return {file: null, ignore: true}
+        }
+        var filenameBare = filename.substr(0, filename.lastIndexOf("."))
+        var contentFile = contentFiles.find(e => (e.hasOwnProperty('archivePath') && e.archivePath.includes(filenameBare)))
+
+        if (contentFile) {
+            console.warn(`Attempting to download ${contentFile.archivePath}`)
+            downloadedFile = await fetchRetryBlob(`${prefixURL}/${contentFile.archivePath}`)
+            if (!downloadedFile) {
+                console.warn(`Failed to fetch ${contentFile.archivePath}, falling further back to variants`)
+                for (const variant of contentFile.variants) {
+                    downloadedFile = await fetchRetryBlob(variant.url)
+                    if (!downloadedFile) {
+                        console.warn("Didn't work.. trying another variant")
+                        await delay(1000)
+                    } else {
+                        break
+                    }
+                }
+                if (!downloadedFile) {
+                    console.warn(`Dang, we REALLY couldn't find ${filename}...`)
+                    return {file: null, ignore: false}
+                }
+            }
+        } else {
+            console.warn(`Could not find a content file with the same name (${filename})!`)
+        }
+    }
+    console.log("File downloaded.")
+    return {file: downloadedFile, ignore: false}
+}
 
 async function installMod(message) {
     console.log('[GXM] Installing mod',message.modId);
-
+    let rejectOnFailure = message.retry ? false : true
+    let missingCategories = {
+        layers: false,
+        keyboardSounds: false,
+        browserSounds: false,
+        webMods: false
+    }
+                
     let downloadedLayers = []
     if (message.modLayers != null) {
         console.log("Fetching Background Music");
@@ -284,9 +396,22 @@ async function installMod(message) {
                 }
                 for (const actualURL of fileURL.tracks) {
                     let downloadURL = `${message.modContentUrl}/${actualURL}`
-                    console.log('[GXM] Downloading',downloadURL);
+                    console.log('[GXM] Fetching',downloadURL);
                     try {
-                        let downloadedFile = await fetchRetryBlob(downloadURL)
+                        let downloadInfo = await tryToGetFile(downloadURL, actualURL, message.modContentFiles, message.modContentUrl)
+                        let downloadedFile = downloadInfo.file; let ignore = downloadInfo.ignore;
+                        if (ignore) {
+                            continue // referencing a folder, yawwwnn. should not error for this, that's the fault of the mod creator
+                        }
+                        if (rejectOnFailure && !downloadedFile) {
+                            return {
+                                succeeded: false,
+                                error: "Missing assets. Retry?",
+                                retryOffered: true
+                            }
+                        } else if (!downloadedFile) {
+                            missingCategories.layers = true
+                        }
                         let result = null
     
                         try {
@@ -299,7 +424,7 @@ async function installMod(message) {
                         if (result != null) {
                             currentDownloadedTrack.layers.push(result)
                             updateInstallerButtons(message.modId,`Installing track ${Math.round(message.modLayers.indexOf(fileURL) + 1)}/${message.modLayers.length}... (${Math.round(((message.modLayers.indexOf(actualURL) + 1) / clamp(fileURL.tracks.length,1,Number.MAX_SAFE_INTEGER)) * 100)}%)`)
-                        } else {
+                        } else if (rejectOnFailure) {
                             return {
                                 succeeded: false,
                                 error: `Failed to encode track ${Math.round(message.modLayers.indexOf(fileURL) + 1)}.`
@@ -316,11 +441,26 @@ async function installMod(message) {
                 }
                 downloadedLayers.push(currentDownloadedTrack)
             } else { // Old style mod, just one track
+                
                 let downloadURL = `${message.modContentUrl}/${fileURL}`
-                console.log('[GXM] Downloading',downloadURL);
+                console.log('[GXM] Fetching',downloadURL);
                 try {
-                    let downloadedFile = await fetchRetryBlob(downloadURL)
-                    console.log(downloadedFile);
+                    let downloadInfo = await tryToGetFile(downloadURL, fileURL, message.modContentFiles, message.modContentUrl)
+                    let downloadedFile = downloadInfo.file; let ignore = downloadInfo.ignore;
+                    if (ignore) {
+                        continue // referencing a folder, yawwwnn. should not error for this, that's the fault of the mod creator
+                    }
+                    if (rejectOnFailure && !downloadedFile) {
+                        return {
+                            succeeded: false,
+                            error: "Missing assets. Retry?",
+                            retryOffered: true
+                        }
+                    } else if (!downloadedFile) {
+                        missingCategories.layers = true
+                    }
+                    console.log(downloadedFile)
+
                     let result = null
 
                     try {
@@ -333,7 +473,7 @@ async function installMod(message) {
                     if (result != null) {
                         downloadedLayers.push(result)
                         updateInstallerButtons(message.modId,`Music... (${Math.round(((message.modLayers.indexOf(fileURL) + 1) / clamp(message.modLayers.length,1,Number.MAX_SAFE_INTEGER)) * 100)}%)`)
-                    } else {
+                    } else if (rejectOnFailure) {
                         return {
                             succeeded: false,
                             error: "Failed to encode."
@@ -369,10 +509,24 @@ async function installMod(message) {
             for (const fileURL of soundsArray) {
                 let downloadURL = `${message.modContentUrl}/${fileURL}`
                 if (fileURL != "") {
-                    console.log('[GXM] Downloading',downloadURL);
+                    console.log('[GXM] Fetching',downloadURL);
                     currentNumber++
                     try {
-                        let downloadedFile = await fetchRetryBlob(downloadURL)
+                        let downloadInfo = await tryToGetFile(downloadURL, fileURL, message.modContentFiles, message.modContentUrl)
+                        let downloadedFile = downloadInfo.file; let ignore = downloadInfo.ignore;
+                        if (ignore) {
+                            continue // referencing a folder, yawwwnn. should not error for this, that's the fault of the mod creator
+                        }
+                        if (rejectOnFailure && !downloadedFile) {
+                            return {
+                                succeeded: false,
+                                error: "Missing assets. Retry?",
+                                retryOffered: true
+                            }
+                        } else if (!downloadedFile) {
+                            missingCategories.keyboardSounds = true
+                        }
+
                         let result = null
     
                         try {
@@ -385,7 +539,7 @@ async function installMod(message) {
                         if (result != null) {
                             downloadedKeyboardSounds[soundCategory].push(result)
                             updateInstallerButtons(message.modId,`Keyboard sounds... (${Math.round((currentNumber / maxNumber) * 100)}%)`)
-                        } else {
+                        } else if (rejectOnFailure) {
                             return {
                                 succeeded: false,
                                 error: "Failed to encode."
@@ -422,11 +576,25 @@ async function installMod(message) {
             for (const fileURL of soundsArray) {
                 let downloadURL = `${message.modContentUrl}/${fileURL}`
                 if (fileURL != "") {
-                    console.log('[GXM] Downloading',downloadURL);
+                    console.log('[GXM] Fetching',downloadURL);
                     currentNumber++
                     
                     try {
-                        let downloadedFile = await fetchRetryBlob(downloadURL)
+                        let downloadInfo = await tryToGetFile(downloadURL, fileURL, message.modContentFiles, message.modContentUrl)
+                        let downloadedFile = downloadInfo.file; let ignore = downloadInfo.ignore;
+                        if (ignore) {
+                            continue // referencing a folder, yawwwnn. should not error for this, that's the fault of the mod creator
+                        }
+                        if (rejectOnFailure && !downloadedFile) {
+                            return {
+                                succeeded: false,
+                                error: "Missing assets. Retry?",
+                                retryOffered: true
+                            }
+                        } else if (!downloadedFile) {
+                            missingCategories.browserSounds = true
+                        }
+
                         let result = null
     
                         try {
@@ -439,7 +607,7 @@ async function installMod(message) {
                         if (result != null) {
                             downloadedBrowserSounds[soundCategory].push(result)
                             updateInstallerButtons(message.modId,`Browser sounds... (${Math.round((currentNumber / maxNumber) * 100)}%)`)
-                        } else {
+                        } else if (rejectOnFailure) {
                             return {
                                 succeeded: false,
                                 error: "Failed to encode."
@@ -485,10 +653,24 @@ async function installMod(message) {
             for (const fileURL of webData.css) {
                 let downloadURL = `${message.modContentUrl}/${fileURL}`
                 if (fileURL != "") {
-                    console.log('[GXM] Downloading',downloadURL);
+                    console.log('[GXM] Fetching',downloadURL);
                     currentNumber++
                     try {
-                        let downloadedFile = await fetchRetryText(downloadURL)
+                        let downloadInfo = await tryToGetFile(downloadURL, fileURL, message.modContentFiles, message.modContentUrl, true)
+                        let downloadedFile = downloadInfo.file; let ignore = downloadInfo.ignore;
+                        if (ignore) {
+                            continue // referencing a folder, yawwwnn. should not error for this, that's the fault of the mod creator
+                        }
+                        if (rejectOnFailure && !downloadedFile) {
+                            return {
+                                succeeded: false,
+                                error: "Missing assets. Retry?",
+                                retryOffered: true
+                            }
+                        } else if (!downloadedFile) {
+                            missingCategories.webMods = true
+                        }
+
                         let css = downloadedFile
 
                         if (css != null) {
@@ -514,7 +696,7 @@ async function installMod(message) {
                                     error: "Failed to convert CSS."
                                 }
                             }
-                        } else {
+                        } else if (rejectOnFailure) {
                             console.log("Got a null result");
                             return {
                                 succeeded: false,
@@ -558,7 +740,7 @@ async function installMod(message) {
     console.log("Fetched everything!");
 
     if (downloadedLayers.length > 0 || (Object.keys(downloadedKeyboardSounds).length > 0) || (Object.keys(downloadedBrowserSounds).length > 0) || (Object.keys(downloadedWebMods).length > 0) || (Object.keys(downloadedThemes).length > 0)) {
-        return await browser.runtime.sendMessage({
+        let finale = await browser.runtime.sendMessage({
             intent: "installMod",
             modId: message.modId,
             modContentUrl: message.modContentUrl,
@@ -574,6 +756,8 @@ async function installMod(message) {
             modShortId: message.modShortId,
             modIcon: downloadedIcon
         })
+        finale.missing = missingCategories
+        return finale
     } else {
         return {
             succeeded: false,

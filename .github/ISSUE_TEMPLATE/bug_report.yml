@@ -58,8 +58,8 @@ body:
     id: browser-info
     attributes:
       label: Browser Information
-      description: What browser you are running the extention on?
-      placeholder: 
+      description: What browser you are running the extension on?
+      placeholder: Firefox 132.0.2 (64-bit)
     validations:
       required: true
 

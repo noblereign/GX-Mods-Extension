@@ -534,32 +534,33 @@ const detectColorFormat = (color) => {
     }
 };
 
-function hexCoercion(colorString) {
+function hexCoercion(colorString, logging) {
     let useString = colorString
-    //console.log(`${useString} is ${detectColorFormat(useString)}`);
+    let logFunc = (logging ? console.log : function() {})
+    logFunc(`${useString} is ${detectColorFormat(useString)}`);
     
     if (detectColorFormat(useString) == "RGBA") {
-    //    console.log(`converting ${useString} to RGB`)
+        logFunc(`converting ${useString} to RGB`)
         useString = rgbaToRgb(useString)
     } else if (detectColorFormat(useString) == "HSLA") {
-    //    console.log(`converting ${useString} to HSL`)
+        logFunc(`converting ${useString} to HSL`)
         useString = hslaToHsl(useString)
     } else if (detectColorFormat(useString) == "HEXA") {
-    //    console.log(`converting ${useString} to HEX`)
+        logFunc(`converting ${useString} to HEX`)
         useString = useString.substring(0, 7)
     }
 
-    //console.log(`${useString} has become ${detectColorFormat(useString)}`);
+    logFunc(`${useString} has become ${detectColorFormat(useString)}`);
 
     if (detectColorFormat(useString) == "RGB") {
-        //console.log(`converting ${useString} to HEX`)
+        logFunc(`converting ${useString} to HEX`)
         useString = rgbtohex(useString)
     } else if (detectColorFormat(useString) == "HSL") {
-        //console.log(`converting ${useString} to HEX`)
+        logFunc(`converting ${useString} to HEX`)
         useString = hslToHex(toHSLObject(useString))
     }
 
-    //console.log(`finally, ${useString} is now ${detectColorFormat(useString)}`);
+    logFunc(`finally, ${useString} is now ${detectColorFormat(useString)}`);
     return useString
 }
 
@@ -776,8 +777,14 @@ async function updateWebModsForAllTabs(modId, webModIndex, enabled) {
 
 
 function generateThemeColors(accentHSL, secondaryHSL, type) {
-    accentHSL = hexCoercion(accentHSL)
-    secondaryHSL = hexCoercion(secondaryHSL)
+    accentHSL = hexCoercion(accentHSL, true)
+    secondaryHSL = hexCoercion(secondaryHSL, true)
+
+    console.log("Accent HSL:")
+    console.log(accentHSL)
+
+    console.log("Secondary HSL:")
+    console.log(secondaryHSL)
 
     accentHSL = hexToHSL(accentHSL)
     secondaryHSL = hexToHSL(secondaryHSL) 
@@ -1712,9 +1719,36 @@ async function loadBrowserSounds(track) {
         console.log(err);
     }
 
-    if (modData[track]) {
+    const trackData = track.split("/");
+    const trackName = trackData[0]
+    const subTrack = trackData[1]
+
+    if (modData[trackName]) {
         console.log("[GXM] Loading modded browser sounds")
-        let layerData = modData[track].browserSounds
+        let layerData = modData[trackName].browserSounds
+
+        if (Array.isArray(layerData)) {
+            if ((layerData[0].hasOwnProperty('name'))) { // new format mod, try and find subtrack
+                console.log(`New format mod, trying to find subtrack ${subTrack}`);
+                var foundLayers = layerData.find(obj => {
+                    return obj.id === subTrack
+                })
+                if (foundLayers) {
+                    layerData = foundLayers.sounds
+                } else {
+                    console.log("THE SUBTRACK DOESNT EXIST??? emptying layerdata to prevent the entire extension from combusting");
+                    layerData = []
+                    browser.notifications.create({
+                        type: "basic",
+                        iconUrl: browser.runtime.getURL("icons/gxm_large_outline.png"),
+                        title: "Failed to load browser sounds...",
+                        message: `Couldn't find the sounds in the mod... this is likely a bug with new mod format, please report this on GXM's GitHub issues with the name of the mod used`,
+                    });
+                }
+            }
+        } else {
+            console.log(`Layerdata not array, assuming classic format mod`);
+        }
 
         if (layerData) {
             for (const [soundCategory, soundsArray] of Object.entries(layerData)) {
@@ -1797,9 +1831,36 @@ async function loadKeyboardSounds(track) {
         console.log(err);
     }
 
-    if (modData[track]) {
+    const trackData = track.split("/");
+    const trackName = trackData[0]
+    const subTrack = trackData[1]
+    
+    if (modData[trackName]) {
         console.log("[GXM] Loading modded keyboard sounds")
-        let layerData = modData[track].keyboardSounds
+        let layerData = modData[trackName].keyboardSounds
+
+        if (Array.isArray(layerData)) {
+            if ((layerData[0].hasOwnProperty('name'))) { // new format mod, try and find subtrack
+                console.log(`New format mod, trying to find subtrack ${subTrack}`);
+                var foundLayers = layerData.find(obj => {
+                    return obj.id === subTrack
+                })
+                if (foundLayers) {
+                    layerData = foundLayers.sounds
+                } else {
+                    console.log("THE SUBTRACK DOESNT EXIST??? emptying layerdata to prevent the entire extension from combusting");
+                    layerData = []
+                    browser.notifications.create({
+                        type: "basic",
+                        iconUrl: browser.runtime.getURL("icons/gxm_large_outline.png"),
+                        title: "Failed to load keyboard sounds...",
+                        message: `Couldn't find the sounds in the mod... this is likely a bug with new mod format, please report this on GXM's GitHub issues with the name of the mod used`,
+                    });
+                }
+            }
+        } else {
+            console.log(`Layerdata not array, assuming classic format mod`);
+        }
 
         if (layerData) {
             for (const [soundCategory, soundsArray] of Object.entries(layerData)) {
@@ -2148,24 +2209,68 @@ async function loadTheme(modId) {
         console.log(err);
     }
 
+    const themeIdData = modId.split("/");
+    const themeName = themeIdData[0]
+    const subTheme = themeIdData[1]
+
     let preferredColorScheme = await getPreferredColorScheme()
-    if (modData[modId]) {
-        if (modData[modId].theme) {
+    if (modData[themeName]) {
+
+        let baseThemeInfo = modData[themeName].theme
+        if (Array.isArray(baseThemeInfo)) {
+            if ((baseThemeInfo[0].hasOwnProperty('name'))) { // new format mod, try and find subtheme
+                console.log(`New format mod, trying to find subtheme ${subTheme}`);
+                var foundTheme = baseThemeInfo.find(obj => {
+                    return obj.id === subTheme
+                })
+                if (foundTheme) {
+                    baseThemeInfo = foundTheme
+                } else {
+                    console.log("THE SUBTHEME DOESNT EXIST??? emptying baseThemeInfo to prevent the entire extension from combusting");
+                    baseThemeInfo = []
+                    browser.notifications.create({
+                        type: "basic",
+                        iconUrl: browser.runtime.getURL("icons/gxm_large_outline.png"),
+                        title: "Failed to load track...",
+                        message: `Couldn't find the music in the mod... this is likely a bug with new mod format, please report this on GXM's GitHub issues with the name of the mod used`,
+                    });
+                }
+            }
+        } else {
+            console.log(`baseThemeInfo not iterable, assuming classic format mod`);
+        }
+        console.log(baseThemeInfo)
+        if (baseThemeInfo) {
             console.log(`User prefers ${preferredColorScheme} mode`)
-            let modTheme = modData[modId].theme[preferredColorScheme]
+            let modTheme = baseThemeInfo[preferredColorScheme]
             let accent = modTheme.gx_accent
             let background = modTheme.gx_secondary_base
+
+            if (typeof accent === 'string' || accent instanceof String) {
+                if (detectColorFormat(accent) != "HSL") {
+                    accent = hexCoercion(accent, true)
+                    accent = hexToHSL(accent)
+                }
+            }
+            if (typeof background === 'string' || background instanceof String) {
+                if (detectColorFormat(background) != "HSL") {
+                    background = hexCoercion(background, true)
+                    background = hexToHSL(background)
+                }
+            }
 
             let accent_string = `hsl(${accent.h}, ${accent.s}%, ${accent.l}%)`
             let background_string = `hsl(${background.h}, ${background.s}%, ${background.l}%)`
             console.log("Generating theme...")
             let colorData = generateThemeColors(accent_string, background_string, preferredColorScheme)
+            console.log("Generated!")
             const themeData = {
                 colors: colorData,
                 properties: {
                     color_scheme: preferredColorScheme
                 }
             }
+            console.log("Theme data formatted.")
             generatedThemeData = themeData
             console.log("Updating")
             browser.theme.update(themeData)
@@ -2445,15 +2550,58 @@ async function handleUpdated(updateInfo) {
             console.log(err);
         }
 
+        const themeIdData = modId.split("/");
+        const themeName = themeIdData[0]
+        const subTheme = themeIdData[1]
+
         if (cTheme == 'off') {
             console.log("Theme changed to off")
-        } else if (modData[cTheme]) {
+        } else if (modData[themeName]) {
             console.log(`Going to try to generate ${cTheme}`)
-            if (modData[cTheme].theme) {
+
+            let baseThemeInfo = modData[themeName].theme
+            if (Array.isArray(baseThemeInfo)) {
+                if ((baseThemeInfo[0].hasOwnProperty('name'))) { // new format mod, try and find subtheme
+                    console.log(`New format mod, trying to find subtheme ${subTheme}`);
+                    var foundTheme = baseThemeInfo.find(obj => {
+                        return obj.id === subTheme
+                    })
+                    if (foundTheme) {
+                        baseThemeInfo = foundTheme
+                    } else {
+                        console.log("THE SUBTHEME DOESNT EXIST??? emptying baseThemeInfo to prevent the entire extension from combusting");
+                        baseThemeInfo = []
+                        browser.notifications.create({
+                            type: "basic",
+                            iconUrl: browser.runtime.getURL("icons/gxm_large_outline.png"),
+                            title: "Failed to load track...",
+                            message: `Couldn't find the music in the mod... this is likely a bug with new mod format, please report this on GXM's GitHub issues with the name of the mod used`,
+                        });
+                    }
+                }
+            } else {
+                console.log(`baseThemeInfo not iterable, assuming classic format mod`);
+            }
+            console.log(baseThemeInfo)
+
+            if (baseThemeInfo) {
                 let preferredColorScheme = getPreferredColorSchemeFast()
-                let modTheme = modData[cTheme].theme[preferredColorScheme]
+                let modTheme = baseThemeInfo[preferredColorScheme]
                 let accent = modTheme.gx_accent
                 let background = modTheme.gx_secondary_base
+
+                if (typeof accent === 'string' || accent instanceof String) {
+                    if (detectColorFormat(accent) != "HSL") {
+                        accent = hexCoercion(accent, true)
+                        accent = hexToHSL(accent)
+                    }
+                }
+                if (typeof background === 'string' || background instanceof String) {
+                    if (detectColorFormat(background) != "HSL") {
+                        background = hexCoercion(background, true)
+                        background = hexToHSL(background)
+                    }
+                }
 
                 let accent_string = `hsl(${accent.h}, ${accent.s}%, ${accent.l}%)`
                 let background_string = `hsl(${background.h}, ${background.s}%, ${background.l}%)`

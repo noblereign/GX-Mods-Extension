@@ -494,63 +494,152 @@ async function installMod(message) {
     let downloadedKeyboardSounds = {}
     if (message.modKeyboardSounds != null) {
         console.log("Fetching Keyboard Sounds");
-        updateInstallerButtons(message.modId,`Keyboard sounds... (0%)`)
-        let currentNumber = 0;
-        let maxNumber = 0;
-        for (const [soundCategory, soundsArray] of Object.entries(message.modKeyboardSounds)) {
-            for (const fileURL of soundsArray) {
-                maxNumber++
+
+        if (Array.isArray(message.modKeyboardSounds)) { // New style that supports multiple keyboard sound sets (even though the only mod I've seen doing this only ever defines one???)
+            let setCount = message.modKeyboardSounds.length
+            let setNumber = 0;
+
+            downloadedKeyboardSounds = [] // We will store an array of keyboard sets instead of having it all be one
+            for (const keySet of message.modKeyboardSounds) {
+                if (keySet.hasOwnProperty('name')) {
+                    setNumber++
+                    updateInstallerButtons(message.modId,`Keyboard ${setNumber}/${setCount}... (0%)`)
+                    let currentDownloadedKeyboard = {
+                        id: keySet.id,
+                        name: keySet.name,
+                        author: keySet.author, // The one I saw didn't have an author section, but like.. you never know at this point.
+                        sounds: {}
+                    }
+
+                    let currentNumber = 0;
+                    let maxNumber = 0;
+                    for (const [soundCategory, soundsArray] of Object.entries(keySet.sounds)) {
+                        for (const fileURL of soundsArray) {
+                            maxNumber++
+                        }
+                    }
+
+                    for (const [soundCategory, soundsArray] of Object.entries(keySet.sounds)) {
+                        console.log("fetching",soundCategory)
+                        currentDownloadedKeyboard.sounds[soundCategory] = []
+                        for (const fileURL of soundsArray) {
+                            let downloadURL = `${message.modContentUrl}/${fileURL}`
+                            if (fileURL != "") {
+                                console.log('[GXM] Fetching',downloadURL);
+                                currentNumber++
+                                try {
+                                    let downloadInfo = await tryToGetFile(downloadURL, fileURL, message.modContentFiles, message.modContentUrl)
+                                    let downloadedFile = downloadInfo.file; let ignore = downloadInfo.ignore;
+                                    if (ignore) {
+                                        continue // referencing a folder, yawwwnn. should not error for this, that's the fault of the mod creator
+                                    }
+                                    if (rejectOnFailure && !downloadedFile) {
+                                        return {
+                                            succeeded: false,
+                                            error: "Missing assets. Retry?",
+                                            retryOffered: true
+                                        }
+                                    } else if (!downloadedFile) {
+                                        missingCategories.keyboardSounds = true
+                                    }
+        
+                                    let result = null
+                
+                                    try {
+                                        let arrayBuffer = await downloadedFile.arrayBuffer()
+                                        result = new Blob([arrayBuffer], {type: downloadedFile.type});
+                                    } catch(error) {
+                                        console.log(error);
+                                    }
+                
+                                    if (result != null) {
+                                        currentDownloadedKeyboard.sounds[soundCategory].push(result)
+                                        updateInstallerButtons(message.modId,`Keyboard ${setNumber}/${setCount}... (${Math.round((currentNumber / maxNumber) * 100)}%)`)
+                                    } else if (rejectOnFailure) {
+                                        return {
+                                            succeeded: false,
+                                            error: "Failed to encode."
+                                        }
+                                    }
+                                } catch (err) {
+                                    console.log("Download error");
+                                    console.log(err);
+                                    return {
+                                        succeeded: false,
+                                        error: "Failed to download."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    downloadedKeyboardSounds.push(currentDownloadedKeyboard);
+                } else {
+                    console.warn("This mod has weird metadata and you should really report this to the GitHub")
+                    return {
+                        succeeded: false,
+                        error: `Odd metadata, please report this.`
+                    }
+                }
             }
-        }
+        } else { // Old style (one set, proceed as usual)
+            updateInstallerButtons(message.modId,`Keyboard sounds... (0%)`)
+            let currentNumber = 0;
+            let maxNumber = 0;
+            for (const [soundCategory, soundsArray] of Object.entries(message.modKeyboardSounds)) {
+                for (const fileURL of soundsArray) {
+                    maxNumber++
+                }
+            }
 
-        for (const [soundCategory, soundsArray] of Object.entries(message.modKeyboardSounds)) {
-            console.log("fetching",soundCategory)
-            downloadedKeyboardSounds[soundCategory] = []
-            for (const fileURL of soundsArray) {
-                let downloadURL = `${message.modContentUrl}/${fileURL}`
-                if (fileURL != "") {
-                    console.log('[GXM] Fetching',downloadURL);
-                    currentNumber++
-                    try {
-                        let downloadInfo = await tryToGetFile(downloadURL, fileURL, message.modContentFiles, message.modContentUrl)
-                        let downloadedFile = downloadInfo.file; let ignore = downloadInfo.ignore;
-                        if (ignore) {
-                            continue // referencing a folder, yawwwnn. should not error for this, that's the fault of the mod creator
-                        }
-                        if (rejectOnFailure && !downloadedFile) {
-                            return {
-                                succeeded: false,
-                                error: "Missing assets. Retry?",
-                                retryOffered: true
-                            }
-                        } else if (!downloadedFile) {
-                            missingCategories.keyboardSounds = true
-                        }
-
-                        let result = null
-    
+            for (const [soundCategory, soundsArray] of Object.entries(message.modKeyboardSounds)) {
+                console.log("fetching",soundCategory)
+                downloadedKeyboardSounds[soundCategory] = []
+                for (const fileURL of soundsArray) {
+                    let downloadURL = `${message.modContentUrl}/${fileURL}`
+                    if (fileURL != "") {
+                        console.log('[GXM] Fetching',downloadURL);
+                        currentNumber++
                         try {
-                            let arrayBuffer = await downloadedFile.arrayBuffer()
-                            result = new Blob([arrayBuffer], {type: downloadedFile.type});
-                        } catch(error) {
-                            console.log(error);
-                        }
-    
-                        if (result != null) {
-                            downloadedKeyboardSounds[soundCategory].push(result)
-                            updateInstallerButtons(message.modId,`Keyboard sounds... (${Math.round((currentNumber / maxNumber) * 100)}%)`)
-                        } else if (rejectOnFailure) {
+                            let downloadInfo = await tryToGetFile(downloadURL, fileURL, message.modContentFiles, message.modContentUrl)
+                            let downloadedFile = downloadInfo.file; let ignore = downloadInfo.ignore;
+                            if (ignore) {
+                                continue // referencing a folder, yawwwnn. should not error for this, that's the fault of the mod creator
+                            }
+                            if (rejectOnFailure && !downloadedFile) {
+                                return {
+                                    succeeded: false,
+                                    error: "Missing assets. Retry?",
+                                    retryOffered: true
+                                }
+                            } else if (!downloadedFile) {
+                                missingCategories.keyboardSounds = true
+                            }
+
+                            let result = null
+        
+                            try {
+                                let arrayBuffer = await downloadedFile.arrayBuffer()
+                                result = new Blob([arrayBuffer], {type: downloadedFile.type});
+                            } catch(error) {
+                                console.log(error);
+                            }
+        
+                            if (result != null) {
+                                downloadedKeyboardSounds[soundCategory].push(result)
+                                updateInstallerButtons(message.modId,`Keyboard sounds... (${Math.round((currentNumber / maxNumber) * 100)}%)`)
+                            } else if (rejectOnFailure) {
+                                return {
+                                    succeeded: false,
+                                    error: "Failed to encode."
+                                }
+                            }
+                        } catch (err) {
+                            console.log("Download error");
+                            console.log(err);
                             return {
                                 succeeded: false,
-                                error: "Failed to encode."
+                                error: "Failed to download."
                             }
-                        }
-                    } catch (err) {
-                        console.log("Download error");
-                        console.log(err);
-                        return {
-                            succeeded: false,
-                            error: "Failed to download."
                         }
                     }
                 }
@@ -561,64 +650,153 @@ async function installMod(message) {
     let downloadedBrowserSounds = {}
     if (message.modBrowserSounds != null) {
         console.log("Fetching Browser Sounds");
-        updateInstallerButtons(message.modId,`Browser sounds... (0%)`)
-        let currentNumber = 0;
-        let maxNumber = 0;
-        for (const [soundCategory, soundsArray] of Object.entries(message.modBrowserSounds)) {
-            for (const fileURL of soundsArray) {
-                maxNumber++
+
+        if (Array.isArray(message.modBrowserSounds)) { // New style that supports multiple keyboard sound sets (even though the only mod I've seen doing this only ever defines one???)
+            let setCount = message.modBrowserSounds.length
+            let setNumber = 0;
+
+            downloadedBrowserSounds = [] // We will store an array of keyboard sets instead of having it all be one
+            for (const soundSet of message.modBrowserSounds) {
+                if (soundSet.hasOwnProperty('name')) {
+                    setNumber++
+                    updateInstallerButtons(message.modId,`SFX ${setNumber}/${setCount}... (0%)`)
+                    let currentDownloadedSounds = {
+                        id: soundSet.id,
+                        name: soundSet.name,
+                        author: soundSet.author, // The one I saw didn't have an author section, but like.. you never know at this point.
+                        sounds: {}
+                    }
+
+                    let currentNumber = 0;
+                    let maxNumber = 0;
+                    for (const [soundCategory, soundsArray] of Object.entries(soundSet.sounds)) {
+                        for (const fileURL of soundsArray) {
+                            maxNumber++
+                        }
+                    }
+
+                    for (const [soundCategory, soundsArray] of Object.entries(soundSet.sounds)) {
+                        console.log("fetching",soundCategory)
+                        currentDownloadedSounds.sounds[soundCategory] = []
+                        for (const fileURL of soundsArray) {
+                            let downloadURL = `${message.modContentUrl}/${fileURL}`
+                            if (fileURL != "") {
+                                console.log('[GXM] Fetching',downloadURL);
+                                currentNumber++
+                                try {
+                                    let downloadInfo = await tryToGetFile(downloadURL, fileURL, message.modContentFiles, message.modContentUrl)
+                                    let downloadedFile = downloadInfo.file; let ignore = downloadInfo.ignore;
+                                    if (ignore) {
+                                        continue // referencing a folder, yawwwnn. should not error for this, that's the fault of the mod creator
+                                    }
+                                    if (rejectOnFailure && !downloadedFile) {
+                                        return {
+                                            succeeded: false,
+                                            error: "Missing assets. Retry?",
+                                            retryOffered: true
+                                        }
+                                    } else if (!downloadedFile) {
+                                        missingCategories.keyboardSounds = true
+                                    }
+        
+                                    let result = null
+                
+                                    try {
+                                        let arrayBuffer = await downloadedFile.arrayBuffer()
+                                        result = new Blob([arrayBuffer], {type: downloadedFile.type});
+                                    } catch(error) {
+                                        console.log(error);
+                                    }
+                
+                                    if (result != null) {
+                                        currentDownloadedSounds.sounds[soundCategory].push(result)
+                                        updateInstallerButtons(message.modId,`SFX ${setNumber}/${setCount}... (${Math.round((currentNumber / maxNumber) * 100)}%)`)
+                                    } else if (rejectOnFailure) {
+                                        return {
+                                            succeeded: false,
+                                            error: "Failed to encode."
+                                        }
+                                    }
+                                } catch (err) {
+                                    console.log("Download error");
+                                    console.log(err);
+                                    return {
+                                        succeeded: false,
+                                        error: "Failed to download."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    downloadedBrowserSounds.push(currentDownloadedSounds);
+                } else {
+                    console.warn("This mod has weird metadata and you should really report this to the GitHub")
+                    return {
+                        succeeded: false,
+                        error: `Odd metadata, please report this.`
+                    }
+                }
             }
-        }
+        } else {
+            updateInstallerButtons(message.modId,`Browser sounds... (0%)`)
+            let currentNumber = 0;
+            let maxNumber = 0;
+            for (const [soundCategory, soundsArray] of Object.entries(message.modBrowserSounds)) {
+                for (const fileURL of soundsArray) {
+                    maxNumber++
+                }
+            }
 
-        for (const [soundCategory, soundsArray] of Object.entries(message.modBrowserSounds)) {
-            console.log("fetching",soundCategory)
-            downloadedBrowserSounds[soundCategory] = []
-            for (const fileURL of soundsArray) {
-                let downloadURL = `${message.modContentUrl}/${fileURL}`
-                if (fileURL != "") {
-                    console.log('[GXM] Fetching',downloadURL);
-                    currentNumber++
-                    
-                    try {
-                        let downloadInfo = await tryToGetFile(downloadURL, fileURL, message.modContentFiles, message.modContentUrl)
-                        let downloadedFile = downloadInfo.file; let ignore = downloadInfo.ignore;
-                        if (ignore) {
-                            continue // referencing a folder, yawwwnn. should not error for this, that's the fault of the mod creator
-                        }
-                        if (rejectOnFailure && !downloadedFile) {
-                            return {
-                                succeeded: false,
-                                error: "Missing assets. Retry?",
-                                retryOffered: true
-                            }
-                        } else if (!downloadedFile) {
-                            missingCategories.browserSounds = true
-                        }
-
-                        let result = null
-    
+            for (const [soundCategory, soundsArray] of Object.entries(message.modBrowserSounds)) {
+                console.log("fetching",soundCategory)
+                downloadedBrowserSounds[soundCategory] = []
+                for (const fileURL of soundsArray) {
+                    let downloadURL = `${message.modContentUrl}/${fileURL}`
+                    if (fileURL != "") {
+                        console.log('[GXM] Fetching',downloadURL);
+                        currentNumber++
+                        
                         try {
-                            let arrayBuffer = await downloadedFile.arrayBuffer()
-                            result = new Blob([arrayBuffer], {type: downloadedFile.type});
-                        } catch(error) {
-                            console.log(error);
-                        }
-    
-                        if (result != null) {
-                            downloadedBrowserSounds[soundCategory].push(result)
-                            updateInstallerButtons(message.modId,`Browser sounds... (${Math.round((currentNumber / maxNumber) * 100)}%)`)
-                        } else if (rejectOnFailure) {
+                            let downloadInfo = await tryToGetFile(downloadURL, fileURL, message.modContentFiles, message.modContentUrl)
+                            let downloadedFile = downloadInfo.file; let ignore = downloadInfo.ignore;
+                            if (ignore) {
+                                continue // referencing a folder, yawwwnn. should not error for this, that's the fault of the mod creator
+                            }
+                            if (rejectOnFailure && !downloadedFile) {
+                                return {
+                                    succeeded: false,
+                                    error: "Missing assets. Retry?",
+                                    retryOffered: true
+                                }
+                            } else if (!downloadedFile) {
+                                missingCategories.browserSounds = true
+                            }
+
+                            let result = null
+        
+                            try {
+                                let arrayBuffer = await downloadedFile.arrayBuffer()
+                                result = new Blob([arrayBuffer], {type: downloadedFile.type});
+                            } catch(error) {
+                                console.log(error);
+                            }
+        
+                            if (result != null) {
+                                downloadedBrowserSounds[soundCategory].push(result)
+                                updateInstallerButtons(message.modId,`Browser sounds... (${Math.round((currentNumber / maxNumber) * 100)}%)`)
+                            } else if (rejectOnFailure) {
+                                return {
+                                    succeeded: false,
+                                    error: "Failed to encode."
+                                }
+                            }
+                        } catch (err) {
+                            console.log("Download error");
+                            console.log(err);
                             return {
                                 succeeded: false,
-                                error: "Failed to encode."
+                                error: "Failed to download."
                             }
-                        }
-                    } catch (err) {
-                        console.log("Download error");
-                        console.log(err);
-                        return {
-                            succeeded: false,
-                            error: "Failed to download."
                         }
                     }
                 }

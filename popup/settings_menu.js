@@ -54,6 +54,7 @@ const webModList = document.getElementById('knownWebMods')
 const trackSource = document.getElementById('track-source')
 const sfxSource = document.getElementById('sfx-source')
 const keyboardSource = document.getElementById('keyboard-source')
+const themeSource = document.getElementById('theme-source')
 
 const webModItemTemplate = document.getElementById('webModTemplate')
 
@@ -135,7 +136,7 @@ async function updateModList() {
                             const para = document.createElement("option");
                             para.value = id + `/${songData.id}`;
                             para.textContent = songData.name;
-                            para.setAttribute("data-author", songData.author);
+                            para.setAttribute("data-author", (songData.author || data.displayName));
                             modGroup.appendChild(para);
                         }
                         moddedOptions.push(modGroup)
@@ -149,19 +150,49 @@ async function updateModList() {
                 }
                 if (data.keyboardSounds) {
                     keyboardSoundEntries++
-                    const para = document.createElement("option");
-                    para.value = id;
-                    para.textContent = data.displayName;
-                    keyboardModList.appendChild(para);
-                    moddedOptions.push(para)
+                    if (Array.isArray(data.keyboardSounds)) { // New style mod with multiple options
+                        const modGroup = document.createElement("optgroup");
+                        modGroup.label = data.displayName;
+                        keyboardModList.appendChild(modGroup);
+
+                        for (const keyData of data.keyboardSounds) {
+                            const para = document.createElement("option");
+                            para.value = id + `/${keyData.id}`;
+                            para.textContent = keyData.name;
+                            para.setAttribute("data-author", (keyData.author || data.displayName));
+                            modGroup.appendChild(para);
+                        }
+                        moddedOptions.push(modGroup)
+                    } else {
+                        const para = document.createElement("option");
+                        para.value = id;
+                        para.textContent = data.displayName;
+                        keyboardModList.appendChild(para);
+                        moddedOptions.push(para)
+                    }
                 }
                 if (data.browserSounds) {
                     browserSoundEntries++
-                    const para = document.createElement("option");
-                    para.value = id;
-                    para.textContent = data.displayName;
-                    sfxModList.appendChild(para);
-                    moddedOptions.push(para)
+                    if (Array.isArray(data.browserSounds)) { // New style mod with multiple options
+                        const modGroup = document.createElement("optgroup");
+                        modGroup.label = data.displayName;
+                        sfxModList.appendChild(modGroup);
+
+                        for (const soundData of data.browserSounds) {
+                            const para = document.createElement("option");
+                            para.value = id + `/${soundData.id}`;
+                            para.textContent = soundData.name;
+                            para.setAttribute("data-author", (soundData.author || data.displayName));
+                            modGroup.appendChild(para);
+                        }
+                        moddedOptions.push(modGroup)
+                    } else {
+                        const para = document.createElement("option");
+                        para.value = id;
+                        para.textContent = data.displayName;
+                        sfxModList.appendChild(para);
+                        moddedOptions.push(para)
+                    }
                 }
                 if (data.webMods) {
                     for (const [webModIndex, webModData] of Object.entries(data.webMods)) {
@@ -220,11 +251,26 @@ async function updateModList() {
                 }
                 if (data.theme) {
                     themeEntries++
-                    const para = document.createElement("option");
-                    para.value = id;
-                    para.textContent = data.displayName;
-                    themeModList.appendChild(para);
-                    moddedOptions.push(para)
+                    if (Array.isArray(data.theme)) { // New style mod with multiple options
+                        const modGroup = document.createElement("optgroup");
+                        modGroup.label = data.displayName;
+                        themeModList.appendChild(modGroup);
+
+                        for (const themeData of data.theme) {
+                            const para = document.createElement("option");
+                            para.value = id + `/${themeData.id}`;
+                            para.textContent = themeData.name;
+                            para.setAttribute("data-author", (themeData.author || data.displayName));
+                            modGroup.appendChild(para);
+                        }
+                        moddedOptions.push(modGroup)
+                    } else {
+                        const para = document.createElement("option");
+                        para.value = id;
+                        para.textContent = data.displayName;
+                        themeModList.appendChild(para);
+                        moddedOptions.push(para)
+                    }
                 }
             }
 
@@ -379,9 +425,6 @@ async function restoreOptions() {
 
         volumeKeyboardPercentage.textContent = KeyboardVolumeSlider.value;
 
-        ThemeSelector.value = result.themeName || "off";
-        lightThemeBox.checked = result.lightTheme || (await getPreferredColorScheme() === "light") || false;
-
         var selectedItem = KeyboardSelector.selectedOptions[0]
         if (typeof selectedItem !== 'undefined') {
             if (selectedItem.getAttribute("data-author")) {
@@ -392,6 +435,22 @@ async function restoreOptions() {
             }
         } else {
             keyboardSource.classList.add("hidden");
+        }
+
+
+        ThemeSelector.value = result.themeName || "off";
+        lightThemeBox.checked = result.lightTheme || (await getPreferredColorScheme() === "light") || false;
+
+        var selectedItem = ThemeSelector.selectedOptions[0]
+        if (typeof selectedItem !== 'undefined') {
+            if (selectedItem.getAttribute("data-author")) {
+                themeSource.textContent = selectedItem.getAttribute("data-author")
+                themeSource.classList.remove("hidden");
+            } else {
+                themeSource.classList.add("hidden");
+            }
+        } else {
+            themeSource.classList.add("hidden");
         }
 
         globalMuteBox.checked = (typeof result.globalMute == "undefined") ? false : result.globalMute;
@@ -477,6 +536,17 @@ KeyboardSelector.addEventListener("change", function() {
 
 ThemeSelector.addEventListener("change", function() {
     const selectedOption = ThemeSelector.value; // Get the selected value
+    var selectedItem = ThemeSelector.selectedOptions[0]
+    if (typeof selectedItem !== 'undefined') {
+        if (selectedItem.getAttribute("data-author")) {
+            themeSource.textContent = selectedItem.getAttribute("data-author")
+            themeSource.classList.remove("hidden");
+        } else {
+            themeSource.classList.add("hidden");
+        }
+    } else {
+        themeSource.classList.add("hidden");
+    }
     console.log("Selected theme:", selectedOption);
     browser.runtime.sendMessage('themechange_' + selectedOption)
     saveOptions()

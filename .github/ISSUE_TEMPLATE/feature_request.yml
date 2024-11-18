@@ -13,7 +13,7 @@ body:
   - type: textarea
     id: feature
     attributes:
-      label: What is the New feature?
+      label: What's the new feature?
       description: "A description of what you want to see added! If it's related to a problem, be sure to write that down too."
       placeholder: 
     validations:

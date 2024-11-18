@@ -77,4 +77,4 @@ body:
       description: Add any other context about the problem here.
       placeholder: 
     validations:
-      required: true
+      required: false

@@ -22,9 +22,9 @@ body:
   - type: textarea
     id: what-did-you-expect
     attributes:
-      label: What did you expected to happened
-      description: Tell us what you expected!
-      placeholder: 
+      label: What did you expect to happen?
+      description: Tell us what you wanted to see!
+      placeholder: Ideally, it would have made it all the way through installation
     validations:
       required: true
 

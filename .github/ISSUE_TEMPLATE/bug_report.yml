@@ -32,8 +32,8 @@ body:
     id: reproduction
     attributes:
       label: Reproduction
-      description: Please provide a way to reproduce the problem or at list what you did before getting it.
-      placeholder: 
+      description: Please provide a way to reproduce the problem or list the steps you took before it happened.
+      placeholder: I went to the mod's page and clicked install. Then it got stuck.
     validations:
       required: true
 

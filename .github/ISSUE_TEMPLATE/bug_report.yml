@@ -15,7 +15,7 @@ body:
     attributes:
       label: What happened? If applicable, add screenshots to help explain your problem.
       description: Tell us what you see!
-      placeholder: 
+      placeholder: I tried to install https://store.gx.me/mods/dd7dj5/lofi-chill/, and midway through the installation it froze
     validations:
       required: true
 

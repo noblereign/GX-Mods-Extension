@@ -1,7 +1,7 @@
 name: Bug Report
 description: Something's wrong...
 title: "[Bug]: "
-labels: [bug, "unverified"]
+labels: ["bug"]
 assignees:
   - 
 body:

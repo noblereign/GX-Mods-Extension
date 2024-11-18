@@ -3,7 +3,7 @@ description: Something's wrong...
 title: "[Bug]: "
 labels: ["bug"]
 assignees:
-  - 
+  - noblereign
 body:
   - type: markdown
     attributes:

@@ -20,7 +20,7 @@ body:
       required: true
 
   - type: textarea
-    id: what-did-you-expected
+    id: what-did-you-expect
     attributes:
       label: What did you expected to happened
       description: Tell us what you expected!

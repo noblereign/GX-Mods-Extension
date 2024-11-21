@@ -1,5 +1,6 @@
 console.log("[GXM] Injected into GX store!")
 let lastHref = ""
+let wallpaperObservers = []
 function addLocationObserver(callback) {
     const config = { attributes: false, childList: true, subtree: false }
     const observer = new MutationObserver(callback)
@@ -9,6 +10,11 @@ const delay = ms => new Promise(res => setTimeout(res, ms));
 
 function observerCallback() {
     if (window.location.href != lastHref) {
+        wallpaperObservers.forEach(function(obs) {
+            obs.disconnect()
+        })
+        wallpaperObservers.length = 0
+
         let pathArray = window.location.href.split('/');
         let arrayPos = pathArray.indexOf('mods') + 1;
         let modId = pathArray[arrayPos]
@@ -109,18 +115,62 @@ function fetchRetryText(url, options = {}, retries = 3, backoff = 300) {
         .catch(console.error);
 }
 
+function renderWallpaper(wallpaperObject, modId) {
+    if ((!modId) || (modId == "") || (modId.includes("http")) || (modId.includes("gx.me"))) {
+        wallpaperObject.textContent = "Couldn't get mod ID."
+    } else {
+        fetchRetry(`https://api.gx.me/store/v3/mods/${modId}`).then(async function(result) {
+            if (result.data) {
+                let contentFiles = result.data.contentFiles
+                let contentUrl = result.data.contentUrl
+                if ((contentFiles != null) && (contentUrl != null)) {
+                    var contentFile = contentFiles.find(e => (e.hasOwnProperty('archivePath') && e.hasOwnProperty('fileType') && (e.fileType.includes("WALLPAPER_IMAGE") || e.fileType.includes("WALLPAPER_FIRST_FRAME") || e.fileType.includes("WALLPAPER_LAYER_RESOURCE") || e.fileType.includes("WALLPAPER_PREVIEW")) && e.hasOwnProperty('mediaType') && e.mediaType == "IMAGE"))
+                    if (contentFile) {
+                        let renderer = wallpaperObject.parentElement
+                        renderer.setAttribute("gxm-image",`url("${contentUrl}/${contentFile.archivePath}")`)
+                        renderer.classList.add("gxm_wallpaper_renderer");
+
+                        var observer = new MutationObserver(function(mutations) {
+                            mutations.forEach(function(mutation) {
+                                mutation.addedNodes.forEach(function(potentialObj) {
+                                    if (potentialObj.matches('div[data-stats-id*="marketplace-mod-preview-wallpaper-redirect"]')) {
+                                        potentialObj.textContent = ""
+                                        potentialObj.style.backgroundImage = `url("${contentUrl}/${contentFile.archivePath}")`
+                                        potentialObj.style.backgroundSize = "cover"
+                                        console.log("Replaced wallpaper")
+                                    }   
+                                });
+                            });    
+                        });
+                        observer.observe(renderer, {childList: true});
+                        wallpaperObservers.push(observer)
+
+                        wallpaperObject.textContent = ""
+                        wallpaperObject.style.backgroundImage = `url("${contentUrl}/${contentFile.archivePath}")`
+                        wallpaperObject.style.backgroundSize = "cover"
+                    } else {
+                        wallpaperObject.textContent = "Can't display this wallpaper."
+                    }
+                }
+            } else {
+                wallpaperObject.textContent = "Failed to load wallpaper."
+            }
+        })
+    }
+}
+
 function handleModButton(installModButton, modId) {
     installModButton.setAttribute("disabled","")
     installModButton.classList.add("gxm_injected");
     installModButton.textContent = "A moment, please..."
     installModButton.removeAttribute("href")
+    installModButton.parentElement.removeAttribute("href")
 
     console.log("[GXM] Mod ID:",modId)
     if ((!modId) || (modId == "") || (modId.includes("http")) || (modId.includes("gx.me"))) {
         installModButton.textContent = "Couldn't get mod ID."
     } else {
-        let apiResponse = fetchRetry(`https://api.gx.me/store/v3/mods/${modId}`)
-        .then(async function(result) {
+        fetchRetry(`https://api.gx.me/store/v3/mods/${modId}`).then(async function(result) {
             if (result.data) {
                 let modPayload = result.data.manifestSource.mod.payload
                 if ((result.data.contentFiles != null) && (result.data.contentUrl != null) && (result.data.manifestSource != null) && (result.data.manifestSource.mod != null) && (modPayload != null) && (result.data.packageVersion != null) && (result.data.modShortId != null)) {
@@ -177,11 +227,11 @@ function handleModButton(installModButton, modId) {
                                 //insert "don't close the tab" warning
                                 if (installModButton.parentElement.querySelector(".gxm-warning") == null) {
                                     installModButton.parentElement.insertAdjacentHTML("beforeend",`
-                                    <span class="text-[11px] gxm-warning">
-                                        <p class="flex justify-center gap-1 pt-2">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="17" height="15" fill="none" class="text-primary-100"><path fill="currentColor" fill-rule="evenodd" d="M6.92.9c.702-1.2 2.458-1.2 3.16 0l6.673 11.4c.702 1.2-.176 2.7-1.58 2.7H1.827C.423 15-.455 13.5.248 12.3L6.92.9Zm2.107.6a.612.612 0 0 0-1.054 0L1.301 12.9a.6.6 0 0 0 .527.9h13.345a.6.6 0 0 0 .526-.9L9.027 1.5Z" clip-rule="evenodd"></path><path fill="currentColor" d="M7.689 5.573c0-.442.363-.8.811-.8.448 0 .811.358.811.8 0 .442-.363.8-.811.8a.806.806 0 0 1-.811-.8ZM8.189 7.356a.5.5 0 0 0-.5.5v3.917a.5.5 0 0 0 .5.5h.622a.5.5 0 0 0 .5-.5V7.856a.5.5 0 0 0-.5-.5h-.622Z"></path></svg>
+                                    <span class="gx-subheader-s text-l2 my-1 gxm-warning">
+                                        <p class="flex justify-center items-center gap-1 pt-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 17 15" class="size-4 shrink-0 mr-1 text-primary-240"><path fill="currentColor" fill-rule="evenodd" d="M6.92.9c.702-1.2 2.458-1.2 3.16 0l6.673 11.4c.702 1.2-.176 2.7-1.58 2.7H1.827C.423 15-.455 13.5.248 12.3L6.92.9Zm2.107.6a.612.612 0 0 0-1.054 0L1.301 12.9a.6.6 0 0 0 .527.9h13.345a.6.6 0 0 0 .526-.9L9.027 1.5Z" clip-rule="evenodd"></path><path fill="currentColor" d="M7.689 5.573c0-.442.363-.8.811-.8.448 0 .811.358.811.8 0 .442-.363.8-.811.8a.806.806 0 0 1-.811-.8ZM8.189 7.356a.5.5 0 0 0-.5.5v3.917a.5.5 0 0 0 .5.5h.622a.5.5 0 0 0 .5-.5V7.856a.5.5 0 0 0-.5-.5h-.622Z"></path></svg>
                                             <span class="gxm-warning-text">
-                                                <b>Warning:</b> Don't close this tab until installation is complete.
+                                                <b>Warning:</b> Don't close the tab until installation is complete.
                                             </span>
                                         </p>
                                     </span>
@@ -189,8 +239,8 @@ function handleModButton(installModButton, modId) {
                                 }
                                 const dontCloseWarning = installModButton.parentElement.querySelector(".gxm-warning");
                                 const dontCloseText = dontCloseWarning.querySelector(".gxm-warning-text");
-                                dontCloseText.innerHTML = "<b>Warning:</b> Don't close this tab until installation is complete."
-
+                                dontCloseText.innerHTML = "<b>Warning:</b> Don't close the tab until installation is complete."
+                                
                                 let installResult = await installMod({
                                     intent: "installMod",
                                     retry: ignoreFailure,
@@ -247,7 +297,7 @@ function handleModButton(installModButton, modId) {
                                         }
                                     }
                                 } else {
-                                    dontCloseText.innerHTML = `If the issue persists, you may want to <a class="text-neutral-77 transition-colors hover:text-neutral-100" href="https://github.com/noblereign/GX-Mods-Extension/issues/new/choose">report it to us</a>.`
+                                    dontCloseText.innerHTML = `If the issue persists, <a href="https://github.com/noblereign/GX-Mods-Extension/issues/new/choose" class="gx-button-s rounded-s border border-transparent bg-secondary-120 px-1 transition-all active:bg-secondary-80 hover:bg-secondary-160">report it to us.</a>`
                                     installModButton.textContent = installResult.error ? installResult.error : "Something went wrong."
                                     if (installResult.retryOffered) {
                                         installModButton.setAttribute("installError","true")
@@ -286,16 +336,57 @@ function handleModButton(installModButton, modId) {
 async function initHomeScript() {
     async function searchForButton() {
         console.log("[GXM] Searching for button...")
-        for (const a of document.querySelectorAll(".gxbtn-lg.gxbtn-primary")) {
+        for (const a of document.querySelectorAll(`a[data-stats-id="mod-download-gx-button"] > button`)) {
             if (a.textContent.includes("Opera GX") && !a.classList.contains('gxm_injected')) {
                 let installModButton = a
-                let foundHeadline = a.parentElement.parentElement.parentElement.querySelector('.headline4')
+                let foundHeadline = a.parentElement.parentElement.parentElement.querySelector('.gx-header-s')
+                let foundPreview = a.closest(`div[data-stats-id*="marketplace-mod-preview"]`)
+
                 if (foundHeadline) {
                     let foundHref = foundHeadline.href
                     if (foundHref) {
                         let pathArray = foundHref.split('/');
                         let arrayPos = pathArray.indexOf('mods') + 1;
                         let modId = pathArray[arrayPos]
+
+                        if (foundPreview) {
+                            let foundBackground = null;
+                            async function search() {
+                                foundBackground = foundPreview.querySelector('div[data-stats-id*="marketplace-mod-preview-wallpaper-redirect"]')
+                                return foundBackground != null
+                            }
+                            let keepRetrying = true
+                            search().then(function() {
+                                if (!foundBackground) {
+                                    var intervalId = setInterval(function() {
+                                        search()
+                                        if (foundBackground || !keepRetrying) {
+                                            clearInterval(intervalId);
+                                        }
+                                    }, 500);
+                                }
+                                function waitForBG(timeout) {
+                                    var start = Date.now();
+                                    return new Promise(waitForFoo); 
+                                    function waitForFoo(resolve, reject) {
+                                        if (foundBackground)
+                                            resolve(foundBackground);
+                                        else if (timeout && (Date.now() - start) >= timeout)
+                                            reject(new Error("couldn't find bg in time :/"));
+                                        else
+                                            setTimeout(waitForFoo.bind(this, resolve, reject), 30);
+                                    }
+                                }
+                                waitForBG(timeout).then(function(){
+                                    renderWallpaper(foundBackground, modId)
+                                })
+                                .catch(function (err) {
+                                    console.log("Giving up");
+                                    keepRetrying = false
+                                });
+                            });
+                        }
+
                         handleModButton(installModButton, modId)
                     } else {
                         installModButton.textContent = "Couldn't get mod ID."
@@ -423,7 +514,7 @@ async function installMod(message) {
     
                         if (result != null) {
                             currentDownloadedTrack.layers.push(result)
-                            updateInstallerButtons(message.modId,`Installing track ${Math.round(message.modLayers.indexOf(fileURL) + 1)}/${message.modLayers.length}... (${Math.round(((message.modLayers.indexOf(actualURL) + 1) / clamp(fileURL.tracks.length,1,Number.MAX_SAFE_INTEGER)) * 100)}%)`)
+                            updateInstallerButtons(message.modId,`Installing track ${Math.round(message.modLayers.indexOf(fileURL) + 1)}/${message.modLayers.length}… (${Math.round(((message.modLayers.indexOf(actualURL) + 1) / clamp(fileURL.tracks.length,1,Number.MAX_SAFE_INTEGER)) * 100)}%)`)
                         } else if (rejectOnFailure) {
                             return {
                                 succeeded: false,
@@ -503,7 +594,7 @@ async function installMod(message) {
             for (const keySet of message.modKeyboardSounds) {
                 if (keySet.hasOwnProperty('name')) {
                     setNumber++
-                    updateInstallerButtons(message.modId,`Keyboard ${setNumber}/${setCount}... (0%)`)
+                    updateInstallerButtons(message.modId,`Installing keyboard ${setNumber}/${setCount}… (0%)`)
                     let currentDownloadedKeyboard = {
                         id: keySet.id,
                         name: keySet.name,
@@ -554,7 +645,7 @@ async function installMod(message) {
                 
                                     if (result != null) {
                                         currentDownloadedKeyboard.sounds[soundCategory].push(result)
-                                        updateInstallerButtons(message.modId,`Keyboard ${setNumber}/${setCount}... (${Math.round((currentNumber / maxNumber) * 100)}%)`)
+                                        updateInstallerButtons(message.modId,`Installing keyboard ${setNumber}/${setCount}… (${Math.round((currentNumber / maxNumber) * 100)}%)`)
                                     } else if (rejectOnFailure) {
                                         return {
                                             succeeded: false,
@@ -659,7 +750,7 @@ async function installMod(message) {
             for (const soundSet of message.modBrowserSounds) {
                 if (soundSet.hasOwnProperty('name')) {
                     setNumber++
-                    updateInstallerButtons(message.modId,`SFX ${setNumber}/${setCount}... (0%)`)
+                    updateInstallerButtons(message.modId,`Installing sound pack ${setNumber}/${setCount}… (0%)`)
                     let currentDownloadedSounds = {
                         id: soundSet.id,
                         name: soundSet.name,
@@ -710,7 +801,7 @@ async function installMod(message) {
                 
                                     if (result != null) {
                                         currentDownloadedSounds.sounds[soundCategory].push(result)
-                                        updateInstallerButtons(message.modId,`SFX ${setNumber}/${setCount}... (${Math.round((currentNumber / maxNumber) * 100)}%)`)
+                                        updateInstallerButtons(message.modId,`Installing sound pack ${setNumber}/${setCount}… (${Math.round((currentNumber / maxNumber) * 100)}%)`)
                                     } else if (rejectOnFailure) {
                                         return {
                                             succeeded: false,
@@ -948,7 +1039,7 @@ async function initContentScript() {
     let installModButton = null;
     async function searchForButton() {
         console.log("[GXM] Searching for button...")
-        for (const a of document.querySelectorAll(".gxbtn-lg.gxbtn-primary")) {
+        for (const a of document.querySelectorAll(`a[data-stats-id="mod-download-gx-button"] > button`)) {
             if (a.textContent.includes("Opera GX")) {
                 console.log(a.textContent)
                 installModButton = a
@@ -958,42 +1049,96 @@ async function initContentScript() {
         return false
     }
     let keepRetrying = true
-    await searchForButton()
-    if (!installModButton) {
-        var intervalId = setInterval(function() {
-            searchForButton()
-            if (installModButton || !keepRetrying) {
-                clearInterval(intervalId);
+
+    let modPageWallpaper = null;
+    async function searchForWallpaper() {
+        console.log("[GXM] Searching for wallpaper...")
+        for (const a of document.querySelectorAll(`div[data-stats-id="marketplace-mod-preview-wallpaper-redirect"]`)) {
+            console.log(a)
+            console.log(a.textContent)
+            if (a.textContent.includes("Opera GX")) {
+                modPageWallpaper = a
+                return true
             }
-        }, 500);
+        }
+        return false
     }
 
-    function waitForButton(timeout) {
-        var start = Date.now();
-        return new Promise(waitForFoo); 
-    
-        // waitForFoo makes the decision whether the condition is met
-        // or not met or the timeout has been exceeded which means
-        // this promise will be rejected
-        function waitForFoo(resolve, reject) {
-            if (installModButton)
-                resolve(installModButton);
-            else if (timeout && (Date.now() - start) >= timeout)
-                reject(new Error("couldn't find button in time :/"));
-            else
-                setTimeout(waitForFoo.bind(this, resolve, reject), 30);
+    searchForButton().then(function() {
+        if (!installModButton) {
+            var intervalId = setInterval(function() {
+                searchForButton()
+                if (installModButton || !keepRetrying) {
+                    clearInterval(intervalId);
+                }
+            }, 500);
         }
-    }
     
-    // This runs the promise code
-    waitForButton(timeout).then(function(){
-        let pathArray = window.location.pathname.split('/');
-        let arrayPos = pathArray.indexOf('mods') + 1;
-        let modId = pathArray[arrayPos]
-        handleModButton(installModButton, modId)
+        function waitForButton(timeout) {
+            var start = Date.now();
+            return new Promise(waitForFoo); 
+        
+            // waitForFoo makes the decision whether the condition is met
+            // or not met or the timeout has been exceeded which means
+            // this promise will be rejected
+            function waitForFoo(resolve, reject) {
+                if (installModButton)
+                    resolve(installModButton);
+                else if (timeout && (Date.now() - start) >= timeout)
+                    reject(new Error("couldn't find button in time :/"));
+                else
+                    setTimeout(waitForFoo.bind(this, resolve, reject), 30);
+            }
+        }
+        
+        // This runs the promise code
+        waitForButton(timeout).then(function(){
+            let pathArray = window.location.pathname.split('/');
+            let arrayPos = pathArray.indexOf('mods') + 1;
+            let modId = pathArray[arrayPos]
+            handleModButton(installModButton, modId)
+        })
+        .catch(function (err) {
+            console.log("Giving up");
+            keepRetrying = false
+        });
     })
-    .catch(function (err) {
-        console.log("Giving up");
-        keepRetrying = false
-    });
+
+    let wallpaperRetry = true
+    searchForWallpaper().then(function(){
+        if (!modPageWallpaper) {
+            var intervalId = setInterval(function() {
+                searchForWallpaper()
+                if (modPageWallpaper || !wallpaperRetry) {
+                    clearInterval(intervalId);
+                }
+            }, 500);
+        }
+    
+        function waitForWallpaper(timeout) {
+            var start = Date.now();
+            return new Promise(waitForBar); 
+
+            function waitForBar(resolve, reject) {
+                if (modPageWallpaper)
+                    resolve(modPageWallpaper);
+                else if (timeout && (Date.now() - start) >= timeout)
+                    reject(new Error("couldn't find wallpaper in time :/"));
+                else
+                    setTimeout(waitForBar.bind(this, resolve, reject), 30);
+            }
+        }
+        
+        // This runs the promise code
+        waitForWallpaper(timeout).then(function(){
+            let pathArray = window.location.pathname.split('/');
+            let arrayPos = pathArray.indexOf('mods') + 1;
+            let modId = pathArray[arrayPos]
+            renderWallpaper(modPageWallpaper, modId)
+        })
+        .catch(function (err) {
+            console.log("Giving up (wallpaper)");
+            wallpaperRetry = false
+        });
+    })
 }

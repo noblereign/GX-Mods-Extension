@@ -43,8 +43,9 @@ body:
       label: System Information
       description: What operating system you are running the extention on?
       options:
-        - "Windows 10"
-        - "Windows 11"
+        - "Windows 10/11"
+        - "Windows (Other)"
+        - "Android"
         - "MacOS"
         - "Linux Mint"
         - "Debian"

@@ -41,7 +41,7 @@ body:
     id: system-info
     attributes:
       label: System Information
-      description: What operating system you are running the extention on?
+      description: What operating system you are running the extension on?
       options:
         - "Windows 10/11"
         - "Windows (Other)"
@@ -55,7 +55,7 @@ body:
     validations:
       required: true
 
-    - type: textarea
+  - type: textarea
     id: browser-info
     attributes:
       label: Browser Information
@@ -71,7 +71,7 @@ body:
       description: Please copy and paste any relevant log output (if you can). This will be automatically formatted into code, so no need for backticks.
       render: Shell
 
-    - type: textarea
+  - type: textarea
     id: additional-context
     attributes:
       label: Additional context

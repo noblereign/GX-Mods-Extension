@@ -1,0 +1,81 @@
+name: Bug Report
+description: Something's wrong...
+title: "[Bug]: "
+labels: ["bug"]
+assignees:
+  - noblereign
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened? If applicable, add screenshots to help explain your problem.
+      description: Tell us what you see!
+      placeholder: I tried to install https://store.gx.me/mods/dd7dj5/lofi-chill/, and midway through the installation it froze
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-did-you-expect
+    attributes:
+      label: What did you expect to happen?
+      description: Tell us what you wanted to see!
+      placeholder: Ideally, it would have made it all the way through installation
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Please provide a way to reproduce the problem or list the steps you took before it happened.
+      placeholder: I went to the mod's page and clicked install. Then it got stuck.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: system-info
+    attributes:
+      label: System Information
+      description: What operating system you are running the extention on?
+      options:
+        - "Windows 10/11"
+        - "Windows (Other)"
+        - "Android"
+        - "MacOS"
+        - "Linux Mint"
+        - "Debian"
+        - "NixOS"
+        - "ArchLinux"
+        - "Other"
+    validations:
+      required: true
+
+    - type: textarea
+    id: browser-info
+    attributes:
+      label: Browser Information
+      description: What browser you are running the extension on?
+      placeholder: Firefox 132.0.2 (64-bit)
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Please copy and paste any relevant log output (if you can). This will be automatically formatted into code, so no need for backticks.
+      render: Shell
+
+    - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Add any other context about the problem here.
+      placeholder: 
+    validations:
+      required: false
